@@ -11,15 +11,16 @@
 ## 📱 Main Navigation Layout
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  🏠 Dashboard  │  🏢 Groups     │  🏢 Branches  │  📹 Devices  │  🧑 Persons │
-│                │  (Admin only)  │               │              │   (Re-ID)  │
-├─────────────────────────────────────────────────────────────────────────┤
-│  📺 Live CCTV  │  🎛️ Layout     │  🚨 Events    │  📈 Reports  │  🔑 API     │
-│                │  (Admin only)  │               │              │            │
-├─────────────────────────────────────────────────────────────────────────┤
-│  ⚙️ Settings                                                             │
-└─────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  🏠 Dashboard  │  🏢 Groups     │  🏢 Branches  │  📹 Devices  │  🧑 Persons   │
+│                │  (Admin only)  │               │              │   (Re-ID)    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  📺 Live CCTV  │  🎛️ Layout     │  🚨 Events    │  📈 Reports  │  🔑 API       │
+│                │  (Admin only)  │               │              │              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  🔄 Queue      │  📦 Storage    │  💬 WhatsApp  │  ⚙️ Settings                │
+│  (Admin only)  │  (Admin only)  │  Logs (Admin) │                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 **Blade Template Structure:**
@@ -667,6 +668,201 @@ API Management
 └── Security Settings
 ```
 
+## 🔄 Queue & Job Monitoring Menu (Admin Only)
+
+### **Queue Dashboard**
+
+- **Queue Overview**
+
+  - Pending jobs by queue
+  - Processing speed metrics
+  - Queue health status
+  - Worker status (active/inactive)
+
+- **Queue Priorities**
+
+  - **critical** (2 workers)
+  - **notifications** (3 workers)
+  - **detections** (5 workers)
+  - **images** (2 workers)
+  - **reports** (2 workers)
+  - **maintenance** (2 workers)
+
+### **Job Management**
+
+- **Failed Jobs**
+
+  - View failed jobs (last 7 days)
+  - Retry individual jobs
+  - Retry all failed jobs
+  - Clear old failed jobs
+  - Job error details
+
+- **Job Monitoring**
+  - Job processing time
+  - Job success rate
+  - Queue latency
+  - Worker utilization
+
+### **Worker Management**
+
+- **Worker Status**
+
+  - Active workers count
+  - Worker processes (16 total)
+  - Worker health checks
+  - Restart workers (Supervisor)
+
+- **Queue Commands**
+  - Start/Stop workers
+  - Restart specific queue
+  - Clear queue
+  - Monitor queue size
+
+### **Queue Sub-menus**
+
+```
+Queue & Job Monitoring
+├── Queue Dashboard
+├── Pending Jobs
+├── Failed Jobs
+├── Job Logs
+├── Worker Status
+└── Queue Settings
+```
+
+---
+
+## 📦 Storage Management Menu (Admin Only)
+
+### **File Registry**
+
+- **All Files View**
+
+  - File path & name
+  - File type & size
+  - Storage disk (local/s3/public)
+  - Related table & ID
+  - Upload date
+  - Uploaded by user
+
+- **Filters & Search**
+  - Filter by file type
+  - Filter by storage disk
+  - Filter by related table
+  - Search by filename
+
+### **Storage Statistics**
+
+- **Usage Overview**
+
+  - Total files count
+  - Total storage size (MB/GB)
+  - Files by type breakdown
+  - Files by disk breakdown
+
+- **Growth Trends**
+  - Daily upload rate
+  - Storage growth chart
+  - Disk usage forecast
+  - Cleanup recommendations
+
+### **Storage Operations**
+
+- **File Management**
+
+  - View file metadata
+  - Download file securely
+  - Delete individual file
+  - Bulk delete old files
+
+- **Cleanup Settings**
+  - Auto-cleanup schedule (daily at 02:00)
+  - Retention period (90 days default)
+  - Manual cleanup trigger
+  - Cleanup logs
+
+### **Storage Sub-menus**
+
+```
+Storage Management
+├── File Registry
+├── Storage Statistics
+├── Cleanup Settings
+├── File Operations
+└── Storage Reports
+```
+
+---
+
+## 💬 WhatsApp Delivery Summary Menu (Admin Only)
+
+### **Delivery Statistics (Aggregated)**
+
+- **Summary View**
+
+  - Daily aggregated statistics (from whatsapp_delivery_summary table)
+  - Total sent messages (per day)
+  - Total delivered messages
+  - Total failed messages
+  - Unique recipients count
+  - Messages with image count
+  - Average delivery time
+
+- **Filters**
+  - Filter by date range
+  - Filter by branch
+  - Filter by device
+  - Sort by delivery rate
+
+### **Raw Log Access (Admin Only)**
+
+- **Log File Viewer**
+
+  - Access to daily log files: `storage/app/logs/whatsapp_messages/YYYY-MM-DD.log`
+  - JSON Lines format (one JSON per line)
+  - Search and filter within log files
+  - Download log files
+  - View detailed provider responses
+
+- **Log Management**
+  - View log file sizes
+  - Archive old logs
+  - Auto-cleanup configuration (retention policy)
+  - Log rotation settings
+
+### **WhatsApp Settings**
+
+- **Provider Configuration**
+
+  - Provider type (WAHA/Twilio/Fonnte)
+  - API URL & credentials
+  - Session name
+  - Retry attempts (3 default)
+  - Timeout settings (30s default)
+
+- **Message Templates**
+  - Template variables list
+  - Template preview
+  - Test message sending
+  - Template management
+
+### **WhatsApp Sub-menus**
+
+```
+WhatsApp Delivery Summary
+├── Daily Statistics (Aggregated)
+├── Delivery Analytics
+├── Raw Log Files (Admin)
+│   ├── View Log Files
+│   ├── Download Logs
+│   └── Archive Management
+├── Provider Settings
+└── Message Templates
+```
+
+---
+
 ## ⚙️ Settings Menu
 
 ### **System Configuration**
@@ -674,24 +870,31 @@ API Management
 - **General Settings**
 
   - Application settings
-  - Timezone configuration
+  - Timezone configuration (Asia/Jakarta)
   - Language settings
   - Theme preferences
 
 - **Database Settings**
-  - Connection settings
+  - Connection settings (PostgreSQL)
   - Backup configuration
-  - Cache settings
   - Performance tuning
+  - Query optimization
 
 ### **Integration Settings**
 
 - **WhatsApp Providers**
 
-  - Provider selection
+  - Provider selection (WAHA/Twilio)
   - API configuration
   - Test connectivity
-  - Delivery tracking
+  - Retry settings
+
+- **Storage Configuration**
+
+  - Disk selection (local/s3/public)
+  - Max file size (10MB default)
+  - Allowed file types
+  - Auto-cleanup settings (90 days)
 
 - **Email Configuration**
   - SMTP settings
@@ -703,7 +906,7 @@ API Management
 
 - **User Roles**
 
-  - Role definitions
+  - Role definitions (admin/operator/viewer)
   - Permission matrix
   - Access control
   - Activity logging
@@ -714,14 +917,26 @@ API Management
   - Two-factor authentication
   - Audit logs
 
+### **Encryption Settings**
+
+- **ENV-based Encryption**
+  - Device credentials encryption (ON/OFF)
+  - Stream credentials encryption (ON/OFF)
+  - Encryption method (AES-256-CBC)
+  - Encryption status check
+
 ### **Settings Sub-menus**
 
 ```
 Settings
 ├── System Configuration
 ├── Integration Settings
+│   ├── WhatsApp Provider
+│   ├── Storage Configuration
+│   └── Email Configuration
 ├── User Management
 ├── Security Settings
+├── Encryption Settings
 ├── Backup & Restore
 └── System Logs
 ```
@@ -731,15 +946,18 @@ Settings
 ### **Mobile Menu Structure**
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  🏠 Dashboard  │  🏢 Groups     │  📹 Devices  │  🧑 Persons  │   │
-│                │  (Admin only)  │              │   (Re-ID)    │   │
-├─────────────────────────────────────────────────────────────────┤
-│  📺 Live CCTV  │  🎛️ Layout     │  🚨 Events  │  📈 Reports  │   │
-│                │  (Admin only)  │              │              │   │
-├─────────────────────────────────────────────────────────────────┤
-│  🔑 API        │  ⚙️ Settings   │  👤 Profile  │              │   │
-└─────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────┐
+│  🏠 Dashboard  │  🏢 Groups     │  📹 Devices  │  🧑 Persons         │
+│                │  (Admin only)  │              │   (Re-ID)           │
+├───────────────────────────────────────────────────────────────────────┤
+│  📺 Live CCTV  │  🎛️ Layout     │  🚨 Events  │  📈 Reports         │
+│                │  (Admin only)  │              │                     │
+├───────────────────────────────────────────────────────────────────────┤
+│  🔄 Queue      │  📦 Storage    │  💬 WhatsApp │  ⚙️ Settings       │
+│  (Admin)       │  (Admin)       │  (Admin)     │                     │
+├───────────────────────────────────────────────────────────────────────┤
+│  🔑 API        │  👤 Profile    │              │                     │
+└───────────────────────────────────────────────────────────────────────┘
 ```
 
 ### **Mobile-Specific Features**
@@ -776,6 +994,9 @@ Settings
 - `Ctrl + E` - Events
 - `Ctrl + R` - Reports
 - `Ctrl + K` - API Management
+- `Ctrl + Q` - Queue Monitoring (Admin only)
+- `Ctrl + S` - Storage Management (Admin only)
+- `Ctrl + W` - WhatsApp Logs (Admin only)
 - `Ctrl + ,` - Settings
 
 ### **Context-Specific Actions**
@@ -788,6 +1009,9 @@ Settings
 - **Layout Management**: Create layout, edit positions, set default, test layout
 - **Event Logs**: Filter, export, view details, view associated person
 - **Reports**: Generate, export, schedule, filter by Re-ID
+- **Queue Jobs**: Retry failed, clear queue, view logs, monitor workers
+- **Storage Files**: View metadata, download, delete, cleanup
+- **WhatsApp Summary**: View daily statistics, download raw logs, analyze delivery rate
 
 ### **Breadcrumb Navigation**
 

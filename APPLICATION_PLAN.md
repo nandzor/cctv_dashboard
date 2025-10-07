@@ -34,8 +34,11 @@
 - **JavaScript**: Alpine.js for interactivity
 - **CSS**: Tailwind CSS
 - **Database**: PostgreSQL 15+
-- **Queue**: Database Queue
+- **Queue**: Database Queue (with Supervisor workers)
 - **Real-time**: Laravel Echo + Pusher/WebSockets
+- **Storage**: Local/S3 with registry tracking
+- **WhatsApp**: WAHA/Twilio integration
+- **Image Processing**: Intervention/Image
 
 ## 📋 Main Menu Structure
 
@@ -321,12 +324,14 @@
   - Branch performance
   - Device utilization
   - Event summaries
+  - Person tracking analytics (Re-ID)
 
 - **Custom Reports**
 
   - Date range selection
   - Branch filtering
   - Device filtering
+  - Person (Re-ID) filtering
   - Export formats (PDF, Excel, CSV)
 
 - **Scheduled Reports**
@@ -335,7 +340,51 @@
   - Report templates
   - Subscription management
 
-### **11. Settings** ⚙️
+### **11. Queue & Job Monitoring** 🔄
+
+- **Queue Dashboard**
+
+  - Pending jobs by queue (critical, notifications, detections, images, reports)
+  - Failed jobs summary
+  - Processing statistics
+  - Queue health monitoring
+
+- **Job Management**
+
+  - Retry failed jobs
+  - Clear old failed jobs
+  - Monitor job performance
+  - View job logs
+
+- **Worker Status**
+  - Active workers count
+  - Worker performance metrics
+  - Queue processing speed
+  - Worker health checks
+
+### **12. Storage Management** 📦
+
+- **File Registry**
+
+  - All uploaded files tracking
+  - File size and type information
+  - Storage disk usage statistics
+  - Related table associations
+
+- **Storage Operations**
+
+  - View file metadata
+  - Download files securely
+  - Delete old files
+  - Storage cleanup scheduling
+
+- **Storage Analytics**
+  - Total storage usage
+  - Files by type breakdown
+  - Files by disk breakdown
+  - Growth trends
+
+### **13. Settings** ⚙️
 
 - **System Configuration**
 
@@ -438,103 +487,153 @@ Group Management Request → Group Processing
         └── Log group changes
 ```
 
-### **3. Person Detection Workflow (Re-ID)**
+### **3. Person Detection Workflow (Re-ID) - Async Processing**
 
 ```
-Device Detection → Person Re-Identification → Event Processing
+Device Detection → API Validation → Queue Job → Processing
     │
-    ├── Validate Detection
-    │   ├── Check device status (device_master)
-    │   ├── Verify branch settings (company_branches)
-    │   ├── Extract Re-ID from detection (re_id)
-    │   └── Validate detection data (confidence, bounding box)
+    ├── API Request Received
+    │   ├── Validate API credentials
+    │   ├── Check rate limits
+    │   ├── Validate payload (re_id, branch_id, device_id)
+    │   └── Upload image (if present)
     │
-    ├── Process Re-ID (Person Tracking)
-    │   ├── Check if re_id exists in re_id_master
-    │   ├── Create new person if not exists
-    │   ├── Update appearance_features (JSON)
-    │   ├── Update first_detected_at (if new)
-    │   ├── Update last_detected_at (always)
-    │   └── Increment total_detection_count
+    ├── Dispatch to Queue (Return 202 Accepted)
+    │   ├── Dispatch ProcessDetectionJob → queue: detections
+    │   ├── Dispatch ProcessDetectionImageJob → queue: images (if image)
+    │   ├── Return immediate response (job_id, status: processing)
+    │   └── Client continues without waiting
     │
-    ├── Log Detection
-    │   ├── Save to re_id_branch_detection:
-    │   │   ├── re_id (person identifier)
-    │   │   ├── branch_id (where detected)
-    │   │   ├── device_id (which device)
-    │   │   ├── detected_count (usually 1)
-    │   │   ├── detection_timestamp (when)
-    │   │   └── detection_data (JSON: confidence, bounding box)
-    │   └── Multiple records allowed per day
+    ├── Background Processing (ProcessDetectionJob)
+    │   ├── Database Transaction Start
+    │   │   ├── Create/Update re_id_masters (daily record)
+    │   │   ├── Check status (active/inactive)
+    │   │   ├── Update appearance_features (JSONB)
+    │   │   ├── Update timestamps (first/last detected)
+    │   │   └── Increment total_actual_count
+    │   │
+    │   ├── Log Detection
+    │   │   ├── Create re_id_branch_detections record
+    │   │   ├── Save detection_timestamp
+    │   │   ├── Save detection_data (JSONB)
+    │   │   └── Update unique branch count
+    │   │
+    │   ├── Create Event Log
+    │   │   ├── Save to event_logs
+    │   │   ├── Link to re_id_masters
+    │   │   ├── Set notification flags (false initially)
+    │   │   └── Store image_path
+    │   │
+    │   └── Database Transaction Commit
+    │       ├── All or nothing (rollback on error)
+    │       ├── Retry up to 3 times on failure
+    │       └── Log to failed_jobs if all retries fail
     │
-    ├── Check Event Settings
-    │   ├── Get branch_event_settings (by branch + device)
-    │   ├── Check is_active (enabled/disabled)
-    │   ├── Check send_image (true/false)
-    │   ├── Check send_message (true/false)
-    │   ├── Check send_notification (true/false)
-    │   └── Check whatsapp_enabled (true/false)
+    ├── Dispatch Child Jobs (Async Chain)
+    │   ├── SendWhatsAppNotificationJob → queue: notifications
+    │   │   ├── Exponential backoff (30s, 60s, 120s, 300s, 600s)
+    │   │   ├── Up to 5 retry attempts
+    │   │   └── Fire & forget delivery
+    │   │
+    │   ├── ProcessDetectionImageJob → queue: images
+    │   │   ├── Resize & optimize image
+    │   │   ├── Add watermark (timestamp + branch)
+    │   │   ├── Create thumbnail (320x240)
+    │   │   └── Save to storage_files registry
+    │   │
+    │   └── UpdateDailyReportJob → queue: reports (delayed 5 min)
+    │       ├── Calculate statistics
+    │       ├── Generate report_data (JSONB)
+    │       └── Save to counting_reports
     │
-    ├── Create Event Log
-    │   ├── Save to event_logs:
-    │   │   ├── branch_id
-    │   │   ├── device_id
-    │   │   ├── re_id (person detected, nullable)
-    │   │   ├── event_type (detection/alert/motion)
-    │   │   ├── detected_count
-    │   │   ├── image_path (if captured)
-    │   │   └── event_data (JSON)
-    │   └── Set notification flags (image_sent, message_sent, notification_sent)
+    ├── WhatsApp Notification Processing (If Enabled)
+    │   ├── Check branch_event_settings.whatsapp_enabled
+    │   ├── Get whatsapp_numbers (JSONB array)
+    │   ├── Format message with template variables
+    │   ├── Send to each phone number
+    │   ├── Log to storage/app/logs/whatsapp_messages/YYYY-MM-DD.log (instant file write)
+    │   └── Update event_logs.notification_sent = true
     │
-    ├── Process Event (If Enabled)
-    │   ├── Capture Image (if send_image = true)
-    │   ├── Send Message (if send_message = true)
-    │   ├── Send Notification (if send_notification = true)
-    │   └── Send WhatsApp (if whatsapp_enabled = true)
-    │       ├── Get whatsapp_numbers from settings
-    │       ├── Format message with template
-    │       ├── Call WhatsApp provider API
-    │       └── Update notification_sent = true
-    │
-    └── Update Counters & Real-time Updates
-        ├── Update re_id_master statistics
-        ├── Invalidate related caches
-        ├── Trigger WebSocket updates
-        └── Log completion
+    └── Real-time Updates & Completion
+        ├── Broadcast WebSocket events
+        ├── Update dashboard counters
+        ├── Trigger person tracking updates
+        └── Complete with success status
 ```
 
-### **4. WhatsApp Notification Workflow**
+**Queue Configuration:**
+
+- **critical**: 2 workers (system critical operations)
+- **notifications**: 3 workers (WhatsApp, Email)
+- **detections**: 5 workers (highest load - real-time detection)
+- **images**: 2 workers (image processing)
+- **reports**: 2 workers (report generation)
+- **maintenance**: 2 workers (cleanup, optimization)
+
+### **4. WhatsApp Notification Workflow - Async Queue Job**
 
 ```
-Event Triggered → WhatsApp Processing
+Event Created → SendWhatsAppNotificationJob Dispatched
     │
-    ├── Check Event Settings
+    ├── Queue Job: SendWhatsAppNotificationJob
+    │   ├── Queue: notifications
+    │   ├── Tries: 5 (exponential backoff)
+    │   ├── Timeout: 60 seconds
+    │   └── Backoff: [30s, 60s, 120s, 300s, 600s]
+    │
+    ├── Job Processing
+    │   ├── Get event_logs record
     │   ├── Get branch_event_settings
     │   ├── Check whatsapp_enabled (boolean ON/OFF)
-    │   └── Get whatsapp_numbers (JSON array)
+    │   └── Get whatsapp_numbers (JSONB array)
     │
-    ├── Prepare Notification
-    │   ├── Get event details
+    ├── Message Preparation
     │   ├── Load message template
     │   ├── Replace template variables:
     │   │   ├── {branch_name}
     │   │   ├── {device_name}
+    │   │   ├── {device_id}
+    │   │   ├── {re_id}
+    │   │   ├── {person_name}
     │   │   ├── {detected_count}
-    │   │   └── {timestamp}
-    │   └── Prepare phone numbers from JSON array
+    │   │   ├── {timestamp}
+    │   │   ├── {date}
+    │   │   └── {time}
+    │   └── Get image_path from event_logs
     │
-    ├── Send WhatsApp Messages (Fire & Forget)
+    ├── Send via WhatsApp Helper
     │   ├── For each phone number:
-    │   │   ├── Call WhatsApp provider API
-    │   │   ├── Send message with optional image
-    │   │   └── No delivery tracking (simple send)
-    │   └── Queue for background processing
+    │   │   ├── Format phone number (62xxx@c.us)
+    │   │   ├── Prepare payload (text + image base64)
+    │   │   ├── Call WAHA/Twilio API
+    │   │   ├── Log to daily file (instant write):
+    │   │   │   → storage/app/logs/whatsapp_messages/YYYY-MM-DD.log
+    │   │   │   → JSON Lines format (one JSON per line)
+    │   │   │   ├── timestamp, event_log_id, phone_number
+    │   │   │   ├── message_text, image_path
+    │   │   │   ├── status (pending/sent/failed)
+    │   │   │   ├── provider_response (execution_time_ms)
+    │   │   │   └── error_message (if failed)
+    │   │   └── No database INSERT (file-based logging)
+    │   └── Fire & forget (no waiting for delivery)
     │
-    └── Completion
-        ├── Update event_log.notification_sent = true
-        ├── Log to Laravel logs (success/error)
-        └── Continue processing (no waiting)
+    ├── Update Event Log
+    │   ├── notification_sent = true
+    │   ├── image_sent = true/false
+    │   └── message_sent = true
+    │
+    └── Job Completion
+        ├── Log success/failure
+        ├── Update job status
+        ├── Retry if failed (up to 5 times)
+        └── Move to failed_jobs if all retries fail
 ```
+
+**Retry Mechanism:**
+
+- **Scheduled Retry**: `RetryFailedWhatsAppMessagesJob` runs every 30 minutes
+- **Max Retries**: 3 attempts (configurable via `WHATSAPP_RETRY_ATTEMPTS`)
+- **Retry Window**: Last 24 hours only
 
 ### **5. API Request Workflow**
 
@@ -559,11 +658,12 @@ API Request → Processing & Response
     │   ├── Update database
     │   └── Prepare response
     │
-    ├── Log Response
-    │   ├── Record response time
-    │   ├── Log status code
-    │   ├── Store request/response
-    │   └── Update usage stats
+    ├── Log Response (File-based)
+    │   ├── Write to storage/app/logs/api_requests/YYYY-MM-DD.log
+    │   ├── Record: response_time_ms, query_count, memory_usage_mb
+    │   ├── Log status code, endpoint, method
+    │   ├── Sanitize sensitive fields (password, token, api_secret)
+    │   └── Instant file append (no queue delay)
     │
     └── Return Response
         ├── JSON response
@@ -652,41 +752,55 @@ Stream Request → Stream Delivery
         └── Release resources
 ```
 
-### **8. Report Generation Workflow**
+### **8. Report Generation Workflow - Async Queue Job**
 
 ```
-Report Request → Report Delivery
+Report Request → UpdateDailyReportJob Dispatched
     │
-    ├── Validate Request
-    │   ├── Check user permissions
-    │   ├── Validate date ranges
-    │   ├── Verify branch access
-    │   └── Check report type
+    ├── Queue Job: UpdateDailyReportJob
+    │   ├── Queue: reports
+    │   ├── Tries: 3
+    │   ├── Timeout: 300 seconds (5 minutes)
+    │   └── Backoff: [30s, 60s, 120s]
     │
-    ├── Check Cache
-    │   ├── Look for existing report
-    │   ├── Check cache validity
-    │   ├── Return cached if valid
-    │   └── Continue if expired
+    ├── Check Existing Report
+    │   ├── Query counting_reports
+    │   ├── WHERE report_type, report_date, branch_id
+    │   ├── Return cached if exists and fresh
+    │   └── Continue if expired or not exists
     │
-    ├── Generate Report
-    │   ├── Query raw data
-    │   ├── Calculate statistics
-    │   ├── Build charts/graphs
-    │   └── Format data
+    ├── Calculate Statistics (PostgreSQL Queries)
+    │   ├── total_devices: DISTINCT device_id count
+    │   ├── total_detections: Total re_id_branch_detections count
+    │   ├── total_events: Total event_logs count
+    │   ├── unique_devices: Active device_masters count
+    │   └── unique_persons: DISTINCT re_id count
     │
-    ├── Cache Report
-    │   ├── Save to counting_reports
-    │   ├── Set expiration
-    │   ├── Update cache metadata
-    │   └── Log generation time
+    ├── Generate Report Data (JSONB)
+    │   ├── Top persons detected (top 10)
+    │   ├── Hourly breakdown (EXTRACT HOUR)
+    │   ├── Device breakdown (JOIN device_masters)
+    │   ├── Peak hour calculation
+    │   └── Additional analytics
     │
-    └── Deliver Report
-        ├── Return JSON/PDF
-        ├── Set download headers
-        ├── Log delivery
-        └── Update analytics
+    ├── Save/Update Report
+    │   ├── UPSERT to counting_reports
+    │   ├── Save report_data as JSONB
+    │   ├── Set generated_at timestamp
+    │   └── Database transaction commit
+    │
+    └── Job Completion
+        ├── Log report generation
+        ├── Broadcast WebSocket update
+        ├── Update report cache
+        └── Return success status
 ```
+
+**Scheduled Report Generation:**
+
+- **Daily at 01:00**: Generate reports for all active branches (yesterday's data)
+- **Queue**: `reports` queue with delay
+- **Retry**: 3 attempts with exponential backoff
 
 ## 🎯 User Roles & Access Control
 
@@ -704,6 +818,9 @@ Report Request → Report Delivery
 - ✅ Re-ID (person) management
 - ✅ Event configuration (all branches)
 - ✅ CCTV Layout Management (create/edit/delete layouts)
+- ✅ Queue & Job Monitoring (view jobs, retry failed)
+- ✅ Storage Management (view files, manage storage)
+- ✅ WhatsApp Message Logs (view delivery status)
 
 **Access Scope:**
 
@@ -806,13 +923,26 @@ Report Request → Report Delivery
 
 ## 📊 Performance Considerations
 
-### **Database Optimization**
+### **Database Optimization (PostgreSQL)**
 
-- Indexed queries (PostgreSQL GIN, B-tree, partial indexes)
-- Materialized views for complex queries
-- Table partitioning for large tables
-- Read replicas for read-heavy workloads
-- Connection pooling with PgBouncer
+- **Indexed Queries**: GIN (JSONB), B-tree, Partial indexes
+- **Materialized Views**: For complex queries (daily_branch_summary)
+- **Table Partitioning**: For large tables (re_id_branch_detections by month)
+- **Read Replicas**: For read-heavy workloads
+- **Connection Pooling**: PgBouncer for PostgreSQL
+- **Query Optimization**: Eager loading, chunking, composite indexes
+
+### **Queue & Background Processing**
+
+- **Queue System**: Database Queue with 6 priority levels
+- **Worker Processes**: 16 total workers across queues
+- **Supervisor**: Auto-restart, graceful shutdown
+- **Async Operations**:
+  - Detection processing (202 Accepted response)
+  - WhatsApp notifications (fire & forget)
+  - Image processing (resize, watermark, thumbnail)
+  - Report generation (scheduled & on-demand)
+  - File cleanup (scheduled daily)
 
 ### **Frontend Optimization**
 
@@ -824,6 +954,46 @@ Report Request → Report Delivery
 - **CDN**: Static assets delivery
 - **Turbo/Inertia (Optional)**: SPA-like experience
 
+### **API Response Standardization**
+
+- **Consistent Format**: All responses use ApiResponseHelper
+- **Status Codes**: Proper HTTP status codes (200, 201, 202, 400, 401, 403, 404, 422, 429, 500)
+- **Error Codes**: Standardized error codes for client handling
+- **Meta Information**: Timestamp, version, request_id in all responses
+- **Pagination**: Standard pagination format
+
+### **Storage & File Management**
+
+- **File Registry**: Centralized tracking in storage_files table
+- **Secure Access**: Encrypted file paths with auth middleware
+- **Auto Cleanup**: Scheduled job (90 days retention)
+- **Metadata Tracking**: File size, type, dimensions, related records
+- **Multi-disk Support**: Local, S3, Public disks
+
 ---
 
-_This application plan provides a comprehensive overview of the CCTV Dashboard system with detailed workflows and user experience considerations._
+## 📋 Database Tables Summary
+
+**Total: 17 Tables** (Optimized with File-based Logs)
+
+| Category     | Tables | Key Features                                       |
+| ------------ | ------ | -------------------------------------------------- |
+| **Core**     | 5      | Groups → Branches → Devices + Re-ID → Detection    |
+| **Events**   | 2      | Event settings + Event logs (with RE_ID)           |
+| **Security** | 2      | API credentials + users (api_usage_summary)        |
+| **CCTV**     | 1      | Stream management (with RE_ID)                     |
+| **Reports**  | 1      | Pre-computed report cache                          |
+| **WhatsApp** | 1      | WhatsApp daily summary (whatsapp_delivery_summary) |
+| **Storage**  | 1      | File storage registry (images, videos)             |
+| **Layout**   | 2      | CCTV layout management (4/6/8 windows)             |
+| **Queue**    | 2      | Jobs + failed_jobs (Laravel default)               |
+
+**Notes:**
+
+- ✅ **Raw Logs**: API requests and WhatsApp messages stored in **daily log files** (JSON Lines format)
+- ✅ **Database**: Only stores **aggregated summaries** (api_usage_summary, whatsapp_delivery_summary)
+- ✅ **Scalability**: File-based logs prevent database bloat for high-volume operations
+
+---
+
+_This application plan provides a comprehensive overview of the CCTV Dashboard system with detailed workflows, queue processing, and user experience considerations._
