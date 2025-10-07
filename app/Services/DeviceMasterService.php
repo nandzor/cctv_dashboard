@@ -13,7 +13,7 @@ class DeviceMasterService extends BaseService {
     }
 
     public function getDeviceWithRelationships(string $deviceId): ?DeviceMaster {
-        return DeviceMaster::with(['branch.companyGroup', 'reIdBranchDetections', 'eventSettings'])
+        return DeviceMaster::with(['branch.group', 'reIdDetections', 'eventSettings'])
             ->where('device_id', $deviceId)->first();
     }
 

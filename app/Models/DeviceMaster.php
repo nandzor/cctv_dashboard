@@ -31,6 +31,14 @@ class DeviceMaster extends Model {
     ];
 
     /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName()
+    {
+        return 'device_id';
+    }
+
+    /**
      * Get the branch this device belongs to
      */
     public function branch() {

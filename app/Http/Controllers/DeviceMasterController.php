@@ -32,7 +32,7 @@ class DeviceMasterController extends Controller {
     }
 
     public function create() {
-        $companyBranches = CompanyBranch::active()->with('companyGroup')->get();
+        $companyBranches = CompanyBranch::active()->with('group')->get();
         return view('device-masters.create', compact('companyBranches'));
     }
 
@@ -47,32 +47,29 @@ class DeviceMasterController extends Controller {
         }
     }
 
-    public function show($deviceId) {
-        $deviceMaster = $this->deviceMasterService->getDeviceWithRelationships($deviceId);
+    public function show(DeviceMaster $deviceMaster) {
+        $deviceMaster = $this->deviceMasterService->getDeviceWithRelationships($deviceMaster->device_id);
         if (!$deviceMaster) abort(404);
         return view('device-masters.show', compact('deviceMaster'));
     }
 
-    public function edit($deviceId) {
-        $deviceMaster = DeviceMaster::where('device_id', $deviceId)->firstOrFail();
-        $companyBranches = CompanyBranch::active()->with('companyGroup')->get();
+    public function edit(DeviceMaster $deviceMaster) {
+        $companyBranches = CompanyBranch::active()->with('group')->get();
         return view('device-masters.edit', compact('deviceMaster', 'companyBranches'));
     }
 
-    public function update(UpdateDeviceMasterRequest $request, $deviceId) {
+    public function update(UpdateDeviceMasterRequest $request, DeviceMaster $deviceMaster) {
         try {
-            $device = DeviceMaster::where('device_id', $deviceId)->firstOrFail();
-            $this->deviceMasterService->updateDevice($device, $request->validated());
-            return redirect()->route('device-masters.show', $deviceId)->with('success', 'Device updated.');
+            $this->deviceMasterService->updateDevice($deviceMaster, $request->validated());
+            return redirect()->route('device-masters.show', $deviceMaster)->with('success', 'Device updated.');
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', 'Failed: ' . $e->getMessage());
         }
     }
 
-    public function destroy($deviceId) {
+    public function destroy(DeviceMaster $deviceMaster) {
         try {
-            $device = DeviceMaster::where('device_id', $deviceId)->firstOrFail();
-            $this->deviceMasterService->deleteDevice($device);
+            $this->deviceMasterService->deleteDevice($deviceMaster);
             return redirect()->route('device-masters.index')->with('success', 'Device deactivated.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed: ' . $e->getMessage());

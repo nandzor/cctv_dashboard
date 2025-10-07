@@ -7,16 +7,16 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">{{ $companyGroup->group_name }}</h1>
-        <p class="mt-2 text-gray-600">{{ $companyGroup->province_name }}</p>
+        <h1 class="text-3xl font-bold text-gray-900">{{ $group->group_name }}</h1>
+        <p class="mt-2 text-gray-600">{{ $group->province_name }}</p>
       </div>
       @if (auth()->user()->isAdmin())
         <div class="flex space-x-3">
-          <a href="{{ route('company-groups.edit', $companyGroup) }}"
+          <a href="{{ route('company-groups.edit', $group) }}"
             class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
             Edit
           </a>
-          <button @click="confirmDelete({{ $companyGroup->id }})"
+          <button @click="confirmDelete({{ $group->id }})"
             class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
             Delete
           </button>
@@ -31,36 +31,36 @@
           <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
             <div>
               <dt class="text-sm font-medium text-gray-500">Province Code</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ $companyGroup->province_code }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ $group->province_code }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Status</dt>
               <dd class="mt-1">
                 <span
-                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $companyGroup->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                  {{ ucfirst($companyGroup->status) }}
+                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $group->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                  {{ ucfirst($group->status) }}
                 </span>
               </dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Phone</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ $companyGroup->phone ?: 'N/A' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ $group->phone ?: 'N/A' }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Email</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ $companyGroup->email ?: 'N/A' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ $group->email ?: 'N/A' }}</dd>
             </div>
             <div class="md:col-span-2">
               <dt class="text-sm font-medium text-gray-500">Address</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ $companyGroup->address ?: 'N/A' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ $group->address ?: 'N/A' }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Created</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ $companyGroup->created_at->format('M d, Y H:i') }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ $group->created_at->format('M d, Y H:i') }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ $companyGroup->updated_at->format('M d, Y H:i') }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ $group->updated_at->format('M d, Y H:i') }}</dd>
             </div>
           </dl>
         </x-card>
@@ -102,7 +102,7 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              @forelse($companyGroup->branches as $branch)
+              @forelse($group->branches as $branch)
                 <tr class="hover:bg-gray-50">
                   <td class="px-6 py-4 text-sm text-gray-900">{{ $branch->branch_code }}</td>
                   <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $branch->branch_name }}</td>
@@ -122,7 +122,7 @@
                 <tr>
                   <td colspan="5" class="px-6 py-8 text-center text-gray-400">
                     No branches found. <a
-                      href="{{ route('company-branches.create', ['group_id' => $companyGroup->id]) }}"
+                      href="{{ route('company-branches.create', ['group_id' => $group->id]) }}"
                       class="text-blue-600 hover:text-blue-800">Create one now</a>
                   </td>
                 </tr>
@@ -157,7 +157,7 @@
     window.addEventListener('confirm-confirm-delete', function() {
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action = `/ company-groups/{{ $companyGroup->id }}`;
+      form.action = `/company-groups/{{ $group->id }}`;
       form.innerHTML = `
             @csrf
             @method('DELETE')

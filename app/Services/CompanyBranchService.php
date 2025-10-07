@@ -20,7 +20,7 @@ class CompanyBranchService extends BaseService {
      * Get all active branches with relationships
      */
     public function getActiveBranchesWithGroup() {
-        return CompanyBranch::with('companyGroup')
+        return CompanyBranch::with('group')
             ->active()
             ->orderBy('branch_name', 'asc')
             ->get();
@@ -31,7 +31,7 @@ class CompanyBranchService extends BaseService {
      */
     public function getBranchWithRelationships(int $id): ?CompanyBranch {
         return CompanyBranch::with([
-            'companyGroup',
+            'group',
             'devices' => function ($query) {
                 $query->active()->orderBy('device_name', 'asc');
             },

@@ -66,7 +66,7 @@
             </x-badge>
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            {{ $device->companyBranch->branch_name ?? 'N/A' }}
+            {{ $device->branch->branch_name ?? 'N/A' }}
           </td>
           <td class="px-6 py-4 whitespace-nowrap">
             <x-badge :variant="$device->status === 'active' ? 'success' : 'danger'">
