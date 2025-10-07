@@ -81,6 +81,10 @@
                 👁️ View Details
               </x-dropdown-link>
 
+              <x-dropdown-link :href="route('company-branches.create', ['group_id' => $group->id])">
+                🏢 Add Branch
+              </x-dropdown-link>
+
               @if (auth()->user()->isAdmin())
                 <x-dropdown-link :href="route('company-groups.edit', $group)">
                   ✏️ Edit Group

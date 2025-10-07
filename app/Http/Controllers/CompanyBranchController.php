@@ -33,9 +33,10 @@ class CompanyBranchController extends Controller {
         return view('company-branches.index', compact('companyBranches', 'statistics', 'companyGroups', 'search', 'perPage', 'status', 'groupId'));
     }
 
-    public function create() {
+    public function create(Request $request) {
         $companyGroups = CompanyGroup::active()->orderBy('group_name')->get();
-        return view('company-branches.create', compact('companyGroups'));
+        $selectedGroupId = $request->input('group_id');
+        return view('company-branches.create', compact('companyGroups', 'selectedGroupId'));
     }
 
     public function store(StoreCompanyBranchRequest $request) {
@@ -55,9 +56,9 @@ class CompanyBranchController extends Controller {
     public function show(CompanyBranch $companyBranch) {
         $branch = $this->companyBranchService->getBranchWithRelationships($companyBranch->id);
         if (!$branch) abort(404);
-        
+
         $deviceCounts = $this->companyBranchService->getDeviceCounts($branch);
-        
+
         return view('company-branches.show', compact('branch', 'deviceCounts'));
     }
 

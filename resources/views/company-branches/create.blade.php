@@ -13,7 +13,7 @@
       <form method="POST" action="{{ route('company-branches.store') }}" class="space-y-5">
         @csrf
 
-        <x-company-group-select name="group_id" label="Company Group" required hint="Select the company group this branch belongs to" />
+        <x-company-group-select name="group_id" label="Company Group" required hint="Select the company group this branch belongs to" :value="$selectedGroupId ?? old('group_id')" />
 
         <x-input name="branch_code" label="Branch Code" placeholder="e.g., JKT001" required
           hint="Unique code identifier for the branch" />
