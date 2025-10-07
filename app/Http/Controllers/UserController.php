@@ -4,31 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Services\UserService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
-class UserController extends Controller
-{
+class UserController extends Controller {
     protected $userService;
 
-    public function __construct(UserService $userService)
-    {
+    public function __construct(UserService $userService) {
         $this->userService = $userService;
     }
 
     /**
      * Display a listing of users
      */
-    public function index(Request $request)
-    {
+    public function index(Request $request) {
         $perPage = $request->get('per_page', 10);
         $search = $request->get('search');
-        
-        if ($search) {
-            $users = $this->userService->searchUsers($search, $perPage);
-        } else {
-            $users = $this->userService->getPaginatedUsers($perPage);
-        }
-        
+
+        // Using new unified getPaginate method from BaseService
+        $users = $this->userService->getPaginate($search, $perPage);
+
         $perPageOptions = $this->userService->getPerPageOptions();
 
         return view('users.index', compact('users', 'perPageOptions', 'search', 'perPage'));
@@ -37,16 +32,14 @@ class UserController extends Controller
     /**
      * Show the form for creating a new user
      */
-    public function create()
-    {
+    public function create() {
         return view('users.create');
     }
 
     /**
      * Store a newly created user
      */
-    public function store(Request $request)
-    {
+    public function store(Request $request) {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -69,8 +62,7 @@ class UserController extends Controller
     /**
      * Display the specified user
      */
-    public function show($id)
-    {
+    public function show($id) {
         $user = $this->userService->findById($id);
 
         if (!$user) {
@@ -84,8 +76,7 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified user
      */
-    public function edit($id)
-    {
+    public function edit($id) {
         $user = $this->userService->findById($id);
 
         if (!$user) {
@@ -99,8 +90,7 @@ class UserController extends Controller
     /**
      * Update the specified user
      */
-    public function update(Request $request, $id)
-    {
+    public function update(Request $request, $id) {
         $user = $this->userService->findById($id);
 
         if (!$user) {
@@ -110,7 +100,7 @@ class UserController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,'.$id,
+            'email' => 'required|string|email|max:255|unique:users,email,' . $id,
             'password' => 'nullable|string|min:6|confirmed',
             'role' => 'required|in:admin,user',
         ]);
@@ -130,8 +120,7 @@ class UserController extends Controller
     /**
      * Remove the specified user
      */
-    public function destroy($id)
-    {
+    public function destroy($id) {
         $user = $this->userService->findById($id);
 
         if (!$user) {
@@ -139,7 +128,7 @@ class UserController extends Controller
                 ->with('error', 'User not found.');
         }
 
-        if ($user->id === auth()->id()) {
+        if ((int)$id === Auth::id()) {
             return redirect()->route('users.index')
                 ->with('error', 'You cannot delete your own account.');
         }
@@ -150,4 +139,3 @@ class UserController extends Controller
             ->with('success', 'User deleted successfully.');
     }
 }
-

@@ -20,11 +20,8 @@ class UserController extends BaseController {
         $search = $request->get('search');
         $perPage = $request->get('per_page', 10);
 
-        if ($search) {
-            $users = $this->userService->searchUsers($search, $perPage);
-        } else {
-            $users = $this->userService->getPaginatedUsers($perPage);
-        }
+        // Using new unified getPaginate method from BaseService
+        $users = $this->userService->getPaginate($search, $perPage);
 
         return $this->paginatedResponse($users, 'Users retrieved successfully');
     }
