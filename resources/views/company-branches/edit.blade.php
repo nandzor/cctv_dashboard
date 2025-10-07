@@ -19,14 +19,7 @@
         @csrf
         @method('PUT')
 
-        <x-select name="group_id" label="Company Group" :value="$companyBranch->group_id" required hint="Select the company group this branch belongs to">
-          <option value="">-- Select Group --</option>
-          @foreach($companyGroups as $group)
-            <option value="{{ $group->id }}" {{ $companyBranch->group_id == $group->id ? 'selected' : '' }}>
-              {{ $group->group_name }} ({{ $group->province_name }})
-            </option>
-          @endforeach
-        </x-select>
+        <x-company-group-select name="group_id" :value="$companyBranch->group_id" label="Company Group" required hint="Select the company group this branch belongs to" />
 
         <x-input name="branch_code" label="Branch Code" :value="$companyBranch->branch_code" placeholder="e.g., JKT001" required
           hint="Unique code identifier for the branch" />

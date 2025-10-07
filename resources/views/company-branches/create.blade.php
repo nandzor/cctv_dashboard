@@ -13,14 +13,7 @@
       <form method="POST" action="{{ route('company-branches.store') }}" class="space-y-5">
         @csrf
 
-        <x-select name="group_id" label="Company Group" required hint="Select the company group this branch belongs to">
-          <option value="">-- Select Group --</option>
-          @foreach($companyGroups as $group)
-            <option value="{{ $group->id }}" {{ old('group_id') == $group->id ? 'selected' : '' }}>
-              {{ $group->group_name }} ({{ $group->province_name }})
-            </option>
-          @endforeach
-        </x-select>
+        <x-company-group-select name="group_id" label="Company Group" required hint="Select the company group this branch belongs to" />
 
         <x-input name="branch_code" label="Branch Code" placeholder="e.g., JKT001" required
           hint="Unique code identifier for the branch" />

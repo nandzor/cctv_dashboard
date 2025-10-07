@@ -32,7 +32,7 @@
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Device Type</dt>
                         <dd class="mt-1">
-                            <x-badge :variant="$deviceMaster->device_type === 'camera' ? 'primary' : ($deviceMaster->device_type === 'node_ai' ? 'purple' : ($deviceMaster->device_type === 'mikrotik' ? 'success' : 'gray'))">
+                            <x-badge :variant="$deviceMaster->device_type === 'cctv' ? 'primary' : ($deviceMaster->device_type === 'node_ai' ? 'purple' : ($deviceMaster->device_type === 'mikrotik' ? 'success' : 'gray'))">
                                 {{ ucfirst(str_replace('_', ' ', $deviceMaster->device_type)) }}
                             </x-badge>
                         </dd>

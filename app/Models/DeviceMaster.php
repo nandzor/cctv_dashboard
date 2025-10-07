@@ -123,6 +123,27 @@ class DeviceMaster extends Model {
     }
 
     /**
+     * Encrypt URL before saving (if env enabled)
+     */
+    public function setUrlAttribute($value) {
+        if ($value && EncryptionHelper::shouldEncryptDeviceCredentials()) {
+            $this->attributes['url'] = EncryptionHelper::encrypt($value);
+        } else {
+            $this->attributes['url'] = $value;
+        }
+    }
+
+    /**
+     * Decrypt URL when accessing (if env enabled)
+     */
+    public function getUrlAttribute($value) {
+        if ($value && EncryptionHelper::shouldEncryptDeviceCredentials()) {
+            return EncryptionHelper::decrypt($value);
+        }
+        return $value;
+    }
+
+    /**
      * Scope: Active devices
      */
     public function scopeActive($query) {

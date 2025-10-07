@@ -19,20 +19,9 @@
         <x-input name="device_name" label="Device Name" placeholder="Main Entrance Camera" required
           hint="Descriptive name for the device" />
 
-        <x-select name="device_type" label="Device Type" required hint="Select the type of device">
-          <option value="">-- Select Device Type --</option>
-          <option value="camera">Camera</option>
-          <option value="node_ai">Node AI</option>
-          <option value="mikrotik">Mikrotik</option>
-          <option value="cctv">CCTV</option>
-        </x-select>
+        <x-device-type-select name="device_type" label="Device Type" required hint="Select the type of device" />
 
-        <x-select name="branch_id" label="Branch" required hint="Select the branch where this device is located">
-          <option value="">-- Select Branch --</option>
-          @foreach($companyBranches as $branch)
-            <option value="{{ $branch->id }}">{{ $branch->branch_name }} ({{ $branch->city_name }})</option>
-          @endforeach
-        </x-select>
+        <x-company-branch-select name="branch_id" label="Branch" required hint="Select the branch where this device is located" />
 
         <x-input name="url" label="URL / IP Address" placeholder="rtsp://192.168.1.100:554/stream1"
           hint="Network address or URL for the device" />

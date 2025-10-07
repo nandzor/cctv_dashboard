@@ -94,7 +94,11 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 text-sm text-gray-900">{{ $device->device_id }}</td>
                             <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $device->device_name }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-900">{{ $device->device_type }}</td>
+                            <td class="px-6 py-4">
+                                <x-badge :variant="$device->device_type === 'cctv' ? 'primary' : ($device->device_type === 'node_ai' ? 'purple' : ($device->device_type === 'mikrotik' ? 'success' : 'gray'))">
+                                    {{ ucfirst(str_replace('_', ' ', $device->device_type)) }}
+                                </x-badge>
+                            </td>
                             <td class="px-6 py-4">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $device->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                     {{ ucfirst($device->status) }}

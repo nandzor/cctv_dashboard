@@ -25,22 +25,9 @@
         <x-input name="device_name" label="Device Name" :value="$deviceMaster->device_name" placeholder="Main Entrance Camera" required
           hint="Descriptive name for the device" />
 
-        <x-select name="device_type" label="Device Type" :value="$deviceMaster->device_type" required hint="Select the type of device">
-          <option value="">-- Select Device Type --</option>
-          <option value="camera" {{ $deviceMaster->device_type === 'camera' ? 'selected' : '' }}>Camera</option>
-          <option value="node_ai" {{ $deviceMaster->device_type === 'node_ai' ? 'selected' : '' }}>Node AI</option>
-          <option value="mikrotik" {{ $deviceMaster->device_type === 'mikrotik' ? 'selected' : '' }}>Mikrotik</option>
-          <option value="cctv" {{ $deviceMaster->device_type === 'cctv' ? 'selected' : '' }}>CCTV</option>
-        </x-select>
+        <x-device-type-select name="device_type" :value="$deviceMaster->device_type" label="Device Type" required hint="Select the type of device" />
 
-        <x-select name="branch_id" label="Branch" :value="$deviceMaster->branch_id" required hint="Select the branch where this device is located">
-          <option value="">-- Select Branch --</option>
-          @foreach($companyBranches as $branch)
-            <option value="{{ $branch->id }}" {{ $deviceMaster->branch_id == $branch->id ? 'selected' : '' }}>
-              {{ $branch->branch_name }} ({{ $branch->city_name }})
-            </option>
-          @endforeach
-        </x-select>
+        <x-company-branch-select name="branch_id" :value="$deviceMaster->branch_id" label="Branch" required hint="Select the branch where this device is located" />
 
         <x-input name="url" label="URL / IP Address" :value="$deviceMaster->url" placeholder="rtsp://192.168.1.100:554/stream1"
           hint="Network address or URL for the device" />
