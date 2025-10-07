@@ -24,4 +24,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    // Enable query logging (use with caution in production)
+    'log_queries' => env('DB_LOG_QUERIES', false),
+
+    // Performance monitoring
+    'performance_monitoring' => [
+        'enabled' => env('PERFORMANCE_MONITORING', true),
+        'include_in_response' => env('PERFORMANCE_IN_RESPONSE', true),
+        'include_in_headers' => env('PERFORMANCE_IN_HEADERS', true),
+        'slow_query_threshold' => env('SLOW_QUERY_THRESHOLD', 1000), // ms
+        'high_memory_threshold' => env('HIGH_MEMORY_THRESHOLD', 128), // MB
+    ],
+
 ];
