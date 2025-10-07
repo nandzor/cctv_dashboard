@@ -8,15 +8,12 @@ use App\Models\ReIdBranchDetection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class ReportController extends Controller
-{
-    public function __construct()
-    {
-        $this->middleware('auth');
+class ReportController extends Controller {
+    public function __construct() {
+        //
     }
 
-    public function dashboard(Request $request)
-    {
+    public function dashboard(Request $request) {
         $dateFrom = $request->input('date_from', now()->subDays(7)->toDateString());
         $dateTo = $request->input('date_to', now()->toDateString());
         $branchId = $request->input('branch_id');
@@ -62,8 +59,7 @@ class ReportController extends Controller
         ));
     }
 
-    public function daily(Request $request)
-    {
+    public function daily(Request $request) {
         $date = $request->input('date', now()->toDateString());
         $branchId = $request->input('branch_id');
 
@@ -80,8 +76,7 @@ class ReportController extends Controller
         return view('reports.daily', compact('reports', 'branches', 'date', 'branchId'));
     }
 
-    public function monthly(Request $request)
-    {
+    public function monthly(Request $request) {
         $month = $request->input('month', now()->format('Y-m'));
         $branchId = $request->input('branch_id');
 

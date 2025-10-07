@@ -11,7 +11,6 @@ class ReIdMasterController extends Controller {
 
     public function __construct(ReIdMasterService $reIdMasterService) {
         $this->reIdMasterService = $reIdMasterService;
-        $this->middleware('auth');
     }
 
     /**

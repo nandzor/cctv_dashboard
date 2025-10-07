@@ -14,7 +14,6 @@ class DeviceMasterController extends Controller {
 
     public function __construct(DeviceMasterService $deviceMasterService) {
         $this->deviceMasterService = $deviceMasterService;
-        $this->middleware('auth');
     }
 
     public function index(Request $request) {

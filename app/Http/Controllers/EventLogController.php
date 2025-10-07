@@ -6,15 +6,12 @@ use App\Models\EventLog;
 use App\Models\CompanyBranch;
 use Illuminate\Http\Request;
 
-class EventLogController extends Controller
-{
-    public function __construct()
-    {
-        $this->middleware('auth');
+class EventLogController extends Controller {
+    public function __construct() {
+        //
     }
 
-    public function index(Request $request)
-    {
+    public function index(Request $request) {
         $query = EventLog::with(['branch', 'device', 'reIdMaster']);
 
         if ($request->filled('event_type')) {
@@ -39,8 +36,7 @@ class EventLogController extends Controller
         return view('event-logs.index', compact('events', 'branches'));
     }
 
-    public function show(EventLog $eventLog)
-    {
+    public function show(EventLog $eventLog) {
         $eventLog->load(['branch', 'device', 'reIdMaster']);
         return view('event-logs.show', compact('eventLog'));
     }

@@ -13,13 +13,6 @@ class CompanyGroupController extends Controller {
 
     public function __construct(CompanyGroupService $companyGroupService) {
         $this->companyGroupService = $companyGroupService;
-        $this->middleware('auth');
-        $this->middleware(function ($request, $next) {
-            if (!$request->user()->isAdmin()) {
-                abort(403, 'Only administrators can manage company groups.');
-            }
-            return $next($request);
-        });
     }
 
     /**

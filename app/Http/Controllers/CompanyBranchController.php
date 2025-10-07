@@ -14,7 +14,6 @@ class CompanyBranchController extends Controller {
 
     public function __construct(CompanyBranchService $companyBranchService) {
         $this->companyBranchService = $companyBranchService;
-        $this->middleware('auth');
     }
 
     public function index(Request $request) {

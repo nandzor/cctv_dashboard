@@ -29,7 +29,19 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Detection API (API Key authentication)
-Route::middleware(ApiKeyAuth::class)->prefix('detection')->group(function () {
-    Route::post('/log', [DetectionController::class, 'store'])->name('api.detection.store');
-    Route::get('/status/{jobId}', [DetectionController::class, 'status'])->name('api.detection.status');
+Route::middleware(ApiKeyAuth::class)->group(function () {
+    // Detection logging
+    Route::post('/detection/log', [DetectionController::class, 'store'])->name('api.detection.store');
+    Route::get('/detection/status/{jobId}', [DetectionController::class, 'status'])->name('api.detection.status');
+
+    // Detection queries
+    Route::get('/detections', [DetectionController::class, 'index'])->name('api.detections.index');
+    Route::get('/detection/summary', [DetectionController::class, 'summary'])->name('api.detection.summary');
+
+    // Person (Re-ID) queries
+    Route::get('/person/{reId}', [DetectionController::class, 'showPerson'])->name('api.person.show');
+    Route::get('/person/{reId}/detections', [DetectionController::class, 'personDetections'])->name('api.person.detections');
+
+    // Branch detections
+    Route::get('/branch/{branchId}/detections', [DetectionController::class, 'branchDetections'])->name('api.branch.detections');
 });

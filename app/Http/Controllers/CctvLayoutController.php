@@ -14,13 +14,6 @@ class CctvLayoutController extends Controller {
 
     public function __construct(CctvLayoutService $cctvLayoutService) {
         $this->cctvLayoutService = $cctvLayoutService;
-        $this->middleware('auth');
-        $this->middleware(function ($request, $next) {
-            if (!$request->user()->isAdmin()) {
-                abort(403, 'Only administrators can manage CCTV layouts.');
-            }
-            return $next($request);
-        });
     }
 
     public function index(Request $request) {
