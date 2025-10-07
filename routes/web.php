@@ -8,6 +8,7 @@ use App\Http\Controllers\CompanyBranchController;
 use App\Http\Controllers\DeviceMasterController;
 use App\Http\Controllers\ReIdMasterController;
 use App\Http\Controllers\CctvLayoutController;
+use App\Http\Controllers\CctvLiveStreamController;
 use App\Http\Controllers\EventLogController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,14 @@ Route::middleware('auth')->group(function () {
     // Event Logs (Read-only)
     Route::get('/event-logs', [EventLogController::class, 'index'])->name('event-logs.index');
     Route::get('/event-logs/{eventLog}', [EventLogController::class, 'show'])->name('event-logs.show');
+
+    // CCTV Live Stream
+    Route::get('/cctv-live-stream', [CctvLiveStreamController::class, 'index'])->name('cctv-live-stream.index');
+    Route::get('/api/cctv/streams/{deviceId}', [CctvLiveStreamController::class, 'getStreamUrl'])->name('cctv-live-stream.stream-url');
+    Route::put('/api/cctv/layouts/{layoutId}/positions/{positionNumber}', [CctvLiveStreamController::class, 'updatePosition'])->name('cctv-live-stream.update-position');
+    Route::get('/api/cctv/branches/{branchId}/devices', [CctvLiveStreamController::class, 'getBranchDevices'])->name('cctv-live-stream.branch-devices');
+    Route::post('/api/cctv/screenshots/{deviceId}', [CctvLiveStreamController::class, 'captureScreenshot'])->name('cctv-live-stream.screenshot');
+    Route::post('/api/cctv/recordings/{deviceId}', [CctvLiveStreamController::class, 'toggleRecording'])->name('cctv-live-stream.recording');
 
     // Reports
     Route::prefix('reports')->name('reports.')->group(function () {
