@@ -3,21 +3,86 @@
 @section('title', 'CCTV Live Stream')
 @section('page-title', 'Live CCTV Monitoring')
 
+@push('styles')
+<style>
+.cctv-grid {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+}
+
+.cctv-grid.4-window {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    height: calc(100vh - 200px);
+}
+
+.cctv-grid.6-window {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(3, 1fr);
+    height: calc(100vh - 200px);
+}
+
+.cctv-grid.8-window {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(4, 1fr);
+    height: calc(100vh - 200px);
+}
+
+.cctv-position {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.position-header {
+    flex-shrink: 0;
+}
+
+.position-config {
+    flex-shrink: 0;
+}
+
+.position-stream {
+    flex: 1;
+    min-height: 200px;
+}
+
+.stream-placeholder {
+    height: 100%;
+}
+
+.stream-controls {
+    transition: opacity 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .cctv-grid.4-window,
+    .cctv-grid.6-window,
+    .cctv-grid.8-window {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(auto-fit, minmax(200px, 1fr));
+        height: auto;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 <div class="max-w-7xl mx-auto">
     <!-- Header Controls -->
-    <div class="mb-6">
+    <x-card title="Live CCTV Monitoring" class="mb-6">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Live CCTV Monitoring</h1>
-                <p class="mt-2 text-gray-600">{{ $layout->layout_name ?? 'Default Layout' }}</p>
+                <h2 class="text-xl font-semibold text-gray-900">{{ $layout->layout_name ?? 'Default Layout' }}</h2>
+                <p class="mt-1 text-sm text-gray-600">Real-time monitoring dashboard</p>
             </div>
 
             <div class="flex items-center space-x-4">
                 <!-- Layout Selector -->
                 <div class="flex items-center space-x-2">
                     <label class="text-sm font-medium text-gray-700">Layout:</label>
-                    <select id="layout-selector" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <select id="layout-selector" class="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                         @foreach($availableLayouts as $availableLayout)
                             <option value="{{ $availableLayout->id }}" {{ $layout && $layout->id == $availableLayout->id ? 'selected' : '' }}>
                                 {{ $availableLayout->layout_name }} ({{ $availableLayout->layout_type }})
@@ -44,11 +109,11 @@
                 </div>
             </div>
         </div>
-    </div>
+    </x-card>
 
     @if($layout)
         <!-- CCTV Grid Container -->
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <x-card title="Live Streams" class="overflow-hidden">
             <div id="cctv-grid" class="cctv-grid {{ $layout->layout_type }} min-h-screen">
                 @foreach($layout->positions as $position)
                     <div class="cctv-position bg-gray-100 border border-gray-300 rounded-lg overflow-hidden" data-position="{{ $position->position_number }}">
@@ -56,41 +121,35 @@
                         <div class="position-header bg-gray-800 text-white p-3 flex items-center justify-between">
                             <div class="flex items-center space-x-2">
                                 <h4 class="font-semibold">Position {{ $position->position_number }}</h4>
-                                <span class="status-indicator {{ $position->is_enabled ? 'text-green-400' : 'text-red-400' }}">
-                                    {{ $position->is_enabled ? '●' : '○' }}
-                                </span>
+                                <x-badge :variant="$position->is_enabled ? 'success' : 'danger'" size="sm">
+                                    {{ $position->is_enabled ? 'Online' : 'Offline' }}
+                                </x-badge>
                             </div>
                             <div class="flex items-center space-x-1">
-                                <button onclick="togglePosition({{ $position->position_number }})"
-                                        class="p-1 hover:bg-gray-700 rounded">
+                                <x-button size="sm" variant="secondary" onclick="togglePosition({{ $position->position_number }})">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                </button>
-                                <button onclick="captureScreenshot({{ $position->position_number }})"
-                                        class="p-1 hover:bg-gray-700 rounded">
+                                </x-button>
+                                <x-button size="sm" variant="secondary" onclick="captureScreenshot({{ $position->position_number }})">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                </button>
+                                </x-button>
                             </div>
                         </div>
 
                         <!-- Position Configuration -->
                         <div class="position-config p-3 bg-gray-50 border-b">
                             <div class="grid grid-cols-1 gap-2">
-                                <select class="branch-select w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                                        data-position="{{ $position->position_number }}"
-                                        onchange="updateBranchDevices({{ $position->position_number }}, this.value)">
-                                    <option value="">Select Branch</option>
-                                    @foreach($branches as $branch)
-                                        <option value="{{ $branch->id }}" {{ $position->branch_id == $branch->id ? 'selected' : '' }}>
-                                            {{ $branch->branch_name }} ({{ $branch->city_name }})
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <x-company-branch-select
+                                    class="branch-select w-full"
+                                    data-position="{{ $position->position_number }}"
+                                    onchange="updateBranchDevices({{ $position->position_number }}, this.value)"
+                                    :value="$position->branch_id"
+                                    placeholder="Select Branch" />
 
                                 <select class="device-select w-full px-2 py-1 text-sm border border-gray-300 rounded"
                                         data-position="{{ $position->position_number }}"
@@ -129,93 +188,41 @@
 
                             <!-- Stream Controls Overlay -->
                             <div class="stream-controls absolute bottom-2 right-2 flex space-x-1 opacity-0 hover:opacity-100 transition-opacity">
-                                <button onclick="toggleRecording({{ $position->position_number }})"
-                                        class="p-2 bg-red-600 text-white rounded hover:bg-red-700">
+                                <x-button size="sm" variant="danger" onclick="toggleRecording({{ $position->position_number }})">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                         <circle cx="12" cy="12" r="10"/>
                                     </svg>
-                                </button>
-                                <button onclick="captureScreenshot({{ $position->position_number }})"
-                                        class="p-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                </x-button>
+                                <x-button size="sm" variant="primary" onclick="captureScreenshot({{ $position->position_number }})">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                     </svg>
-                                </button>
+                                </x-button>
                             </div>
                         </div>
                     </div>
                 @endforeach
             </div>
-        </div>
+        </x-card>
     @else
         <!-- No Layout Available -->
-        <div class="bg-white rounded-lg shadow-lg p-12 text-center">
-            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">No Layout Available</h3>
-            <p class="text-gray-500 mb-4">Please create a CCTV layout first to view live streams.</p>
-            <x-button variant="primary" :href="route('cctv-layouts.create')">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        <x-card title="No Layout Available" class="text-center">
+            <div class="py-12">
+                <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                Create Layout
-            </x-button>
-        </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No Layout Available</h3>
+                <p class="text-gray-500 mb-4">Please create a CCTV layout first to view live streams.</p>
+                <x-button variant="primary" :href="route('cctv-layouts.create')">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Create Layout
+                </x-button>
+            </div>
+        </x-card>
     @endif
 </div>
-
-<!-- CSS for Grid Layouts -->
-<style>
-.cctv-grid {
-    display: grid;
-    gap: 10px;
-    padding: 10px;
-}
-
-.cctv-grid.4-window {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    height: calc(100vh - 200px);
-}
-
-.cctv-grid.6-window {
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    height: calc(100vh - 200px);
-}
-
-.cctv-grid.8-window {
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    height: calc(100vh - 200px);
-}
-
-.cctv-position {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
-.position-stream {
-    flex: 1;
-    min-height: 200px;
-}
-
-.stream-placeholder {
-    height: 100%;
-}
-
-@media (max-width: 768px) {
-    .cctv-grid.4-window,
-    .cctv-grid.6-window,
-    .cctv-grid.8-window {
-        grid-template-columns: 1fr;
-        grid-template-rows: repeat(auto-fit, minmax(200px, 1fr));
-        height: auto;
-    }
-}
-</style>
 @endsection
 
 @push('scripts')
