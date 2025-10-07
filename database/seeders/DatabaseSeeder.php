@@ -28,8 +28,19 @@ class DatabaseSeeder extends Seeder {
 
             // 5. CCTV layouts (depends on users, branches, devices)
             CctvLayoutSeeder::class,
+
+            // 6. API credentials (depends on users, branches, devices)
+            ApiCredentialSeeder::class,
         ]);
 
         $this->command->info('Database seeded successfully!');
+        $this->command->info('');
+        $this->command->info('=== Login Credentials ===');
+        $this->command->info('Admin: admin@cctv.com / admin123');
+        $this->command->info('User: operator.jakarta@cctv.com / password');
+        $this->command->info('');
+        $this->command->info('=== API Credentials ===');
+        $this->command->info('Testing: cctv_test_dev_key / secret_test_dev_2024');
+        $this->command->info('Admin: cctv_live_admin_global_key / secret_admin_global_2024');
     }
 }

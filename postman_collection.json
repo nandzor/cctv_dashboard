@@ -1,0 +1,402 @@
+{
+  "info": {
+    "name": "CCTV Dashboard API",
+    "description": "Complete API collection for CCTV Dashboard with Re-ID Detection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "cctv_test_dev_key",
+      "type": "string"
+    },
+    {
+      "key": "api_secret",
+      "value": "secret_test_dev_2024",
+      "type": "string"
+    },
+    {
+      "key": "test_re_id",
+      "value": "person_test_001",
+      "type": "string"
+    },
+    {
+      "key": "test_branch_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "test_device_id",
+      "value": "CAM_JKT001_001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@cctv.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            }
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": ["{{base_url}}"],
+              "path": ["register"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Detection API",
+      "item": [
+        {
+          "name": "Log Detection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "X-API-Secret",
+                "value": "{{api_secret}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"re_id\": \"{{test_re_id}}\",\n  \"branch_id\": {{test_branch_id}},\n  \"device_id\": \"{{test_device_id}}\",\n  \"detected_count\": 1,\n  \"detection_data\": {\n    \"confidence\": 0.95,\n    \"bounding_box\": {\n      \"x\": 120,\n      \"y\": 150,\n      \"width\": 80,\n      \"height\": 200\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/detection/log",
+              "host": ["{{base_url}}"],
+              "path": ["detection", "log"]
+            },
+            "description": "Log a new person detection event (async processing)"
+          }
+        },
+        {
+          "name": "Check Detection Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "X-API-Secret",
+                "value": "{{api_secret}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/detection/status/:jobId",
+              "host": ["{{base_url}}"],
+              "path": ["detection", "status", ":jobId"],
+              "variable": [
+                {
+                  "key": "jobId",
+                  "value": "job_uuid_here"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Detections",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "X-API-Secret",
+                "value": "{{api_secret}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/detections?per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["detections"],
+              "query": [
+                {
+                  "key": "date_from",
+                  "value": "2025-10-01",
+                  "disabled": true
+                },
+                {
+                  "key": "date_to",
+                  "value": "2025-10-07",
+                  "disabled": true
+                },
+                {
+                  "key": "branch_id",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "device_id",
+                  "value": "CAM_JKT001_001",
+                  "disabled": true
+                },
+                {
+                  "key": "re_id",
+                  "value": "person_test_001",
+                  "disabled": true
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Get all detections with optional filters"
+          }
+        },
+        {
+          "name": "Get Detection Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "X-API-Secret",
+                "value": "{{api_secret}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/detection/summary",
+              "host": ["{{base_url}}"],
+              "path": ["detection", "summary"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2025-10-07",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get global detection summary with statistics and trends"
+          }
+        },
+        {
+          "name": "Get Person Info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "X-API-Secret",
+                "value": "{{api_secret}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/person/:reId",
+              "host": ["{{base_url}}"],
+              "path": ["person", ":reId"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2025-10-07",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "reId",
+                  "value": "{{test_re_id}}"
+                }
+              ]
+            },
+            "description": "Get person information by Re-ID"
+          }
+        },
+        {
+          "name": "Get Person Detection History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "X-API-Secret",
+                "value": "{{api_secret}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/person/:reId/detections",
+              "host": ["{{base_url}}"],
+              "path": ["person", ":reId", "detections"],
+              "query": [
+                {
+                  "key": "date_from",
+                  "value": "2025-10-01",
+                  "disabled": true
+                },
+                {
+                  "key": "date_to",
+                  "value": "2025-10-07",
+                  "disabled": true
+                },
+                {
+                  "key": "branch_id",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "reId",
+                  "value": "{{test_re_id}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Branch Detections",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "X-API-Secret",
+                "value": "{{api_secret}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/branch/:branchId/detections",
+              "host": ["{{base_url}}"],
+              "path": ["branch", ":branchId", "detections"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2025-10-07",
+                  "disabled": true
+                },
+                {
+                  "key": "device_id",
+                  "value": "CAM_JKT001_001",
+                  "disabled": true
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "branchId",
+                  "value": "{{test_branch_id}}"
+                }
+              ]
+            },
+            "description": "Get detections for specific branch with statistics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "User API",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sanctum_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sanctum_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/me",
+              "host": ["{{base_url}}"],
+              "path": ["me"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
