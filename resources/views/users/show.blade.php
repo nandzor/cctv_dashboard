@@ -118,24 +118,20 @@
             </div>
             <div class="text-center">
               @php
-                $daysActive = (int) $user->created_at->diffInDays(now());
+                $createdDate = $user->created_at->startOfDay();
+                $currentDate = now()->startOfDay();
+                $daysAgo = (int) $createdDate->diffInDays($currentDate);
               @endphp
               <p class="text-2xl font-bold text-green-600">
-                @if ($daysActive === 0)
+                @if ($daysAgo === 0)
                   Today
+                @elseif ($daysAgo === 1)
+                  Yesterday
                 @else
-                  {{ $daysActive }}
+                  {{ $daysAgo }} days ago
                 @endif
               </p>
-              <p class="text-xs text-gray-600 mt-1">
-                @if ($daysActive === 0)
-                  Joined Today
-                @elseif ($daysActive === 1)
-                  Day Active
-                @else
-                  Days Active
-                @endif
-              </p>
+              <p class="text-xs text-gray-600 mt-1">Joined</p>
             </div>
             <div class="text-center">
               <p class="text-2xl font-bold text-purple-600">{{ $user->isAdmin() ? 'Admin' : 'User' }}</p>
@@ -154,7 +150,7 @@
           </x-button>
           <div class="flex space-x-3">
             @if ($user->id !== auth()->id())
-              <x-button variant="danger" @click="$dispatch('open-modal-confirm-delete-{{ $user->id }}')">
+              <x-button variant="danger" @click="confirmDelete({{ $user->id }})">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -175,32 +171,50 @@
     </x-card>
   </div>
 
-  <!-- Delete Modal -->
+  <!-- Delete Confirmation Modal -->
   @if ($user->id !== auth()->id())
-    <x-modal id="confirm-delete-{{ $user->id }}" title="Confirm Delete">
-      <div class="text-center py-4">
-        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-          <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">Delete {{ $user->name }}?</h3>
-        <p class="text-sm text-gray-500">This action cannot be undone. All user data will be permanently deleted.</p>
-      </div>
+    <!-- Hidden delete form -->
+    <form id="delete-form-{{ $user->id }}" action="{{ route('users.destroy', $user->id) }}" method="POST"
+      class="hidden">
+      @csrf
+      @method('DELETE')
+    </form>
 
-      <x-slot name="footer">
-        <x-button variant="secondary" @click="$dispatch('close-modal-confirm-delete-{{ $user->id }}')">
-          Cancel
-        </x-button>
-        <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline">
-          @csrf
-          @method('DELETE')
-          <x-button type="submit" variant="danger">
-            Delete User
-          </x-button>
-        </form>
-      </x-slot>
-    </x-modal>
+    <x-confirm-modal id="confirm-delete" title="Confirm Delete"
+      message="This action cannot be undone. The user will be permanently deleted." confirmText="Delete User"
+      cancelText="Cancel" icon="warning" confirmAction="handleDeleteConfirm(data)" />
   @endif
+
+  @push('scripts')
+    <script>
+      // Store userId for deletion
+      let pendingDeleteUserId = {{ $user->id }};
+
+      function confirmDelete(userId) {
+        pendingDeleteUserId = userId;
+        console.log('confirmDelete called with userId:', userId);
+        // Dispatch event to open modal with userId
+        window.dispatchEvent(new CustomEvent('open-modal-confirm-delete', {
+          detail: {
+            userId: userId
+          }
+        }));
+      }
+
+      function handleDeleteConfirm(data) {
+        const userId = data?.userId || pendingDeleteUserId;
+        console.log('handleDeleteConfirm called with userId:', userId);
+        if (userId) {
+          const form = document.getElementById('delete-form-' + userId);
+          if (form) {
+            form.submit();
+          }
+        }
+      }
+
+      // Make functions globally available
+      window.confirmDelete = confirmDelete;
+      window.handleDeleteConfirm = handleDeleteConfirm;
+    </script>
+  @endpush
 @endsection

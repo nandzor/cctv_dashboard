@@ -134,68 +134,20 @@
     </div>
   </x-card>
 
-  <!-- Delete Modal -->
-  <div x-data="{ show: false, userId: null }" x-show="show"
-    x-on:open-modal-confirm-delete.window="show = true; userId = $event.detail.userId"
-    x-on:close-modal-confirm-delete.window="show = false" x-on:keydown.escape.window="show = false" x-cloak
-    class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
-
-    <!-- Backdrop -->
-    <div x-show="show" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-      x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-      x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-      class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm" @click="show = false">
-    </div>
-
-    <!-- Modal -->
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-      <div x-show="show" x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100"
-        x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform scale-100"
-        x-transition:leave-end="opacity-0 transform scale-95"
-        class="inline-block w-full max-w-md p-6 my-8 text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl"
-        @click.away="show = false">
-
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-2xl font-bold text-gray-900">Confirm Delete</h3>
-          <button @click="show = false" class="text-gray-400 hover:text-gray-600 transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <!-- Content -->
-        <div class="text-center py-4">
-          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">Are you sure?</h3>
-          <p class="text-sm text-gray-500">This action cannot be undone. The user will be permanently deleted.</p>
-        </div>
-
-        <!-- Footer -->
-        <div class="mt-6 flex items-center justify-end space-x-3">
-          <x-button variant="secondary" @click="show = false">
-            Cancel
-          </x-button>
-          <x-button variant="danger" @click="deleteUser(userId)">
-            Delete User
-          </x-button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Delete Confirmation Modal -->
+  <x-confirm-modal id="confirm-delete" title="Confirm Delete"
+    message="This action cannot be undone. The user will be permanently deleted." confirmText="Delete User"
+    cancelText="Cancel" icon="warning" confirmAction="handleDeleteConfirm(data)" />
 @endsection
 
 @push('scripts')
   <script>
+    // Store userId for deletion
+    let pendingDeleteUserId = null;
+
     function confirmDelete(userId) {
-      // Dispatch event with userId data
+      pendingDeleteUserId = userId;
+      // Dispatch event to open modal with userId
       window.dispatchEvent(new CustomEvent('open-modal-confirm-delete', {
         detail: {
           userId: userId
@@ -203,15 +155,18 @@
       }));
     }
 
-    function deleteUser(userId) {
-      const form = document.getElementById('delete-form-' + userId);
-      if (form) {
-        form.submit();
+    function handleDeleteConfirm(data) {
+      const userId = data?.userId || pendingDeleteUserId;
+      if (userId) {
+        const form = document.getElementById('delete-form-' + userId);
+        if (form) {
+          form.submit();
+        }
       }
     }
 
     // Make functions globally available
     window.confirmDelete = confirmDelete;
-    window.deleteUser = deleteUser;
+    window.handleDeleteConfirm = handleDeleteConfirm;
   </script>
 @endpush

@@ -1,2 +1,11 @@
 @import "tailwindcss";
 
+/* Apply Poppins font globally */
+body {
+  font-family: "Poppins", sans-serif;
+}
+
+/* Alpine.js x-cloak directive */
+[x-cloak] {
+  display: none !important;
+}
