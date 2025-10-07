@@ -51,7 +51,7 @@
       <x-card title="Detection Trend (Last 7 Days)" class="lg:col-span-2">
         <div class="h-64 flex items-end justify-between space-x-2">
           @php
-            $maxCount = $detectionTrend->max('count') ?: 1;
+            $maxCount = $maxDetectionCount ?? 1;
           @endphp
           @forelse($detectionTrend as $trend)
             <div class="flex-1 flex flex-col items-center">
@@ -112,7 +112,7 @@
             </tbody>
           </table>
         </div>
-        @if ($recentDetections->count() > 0)
+        @if ($hasRecentDetections)
           <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
             <a href="{{ route('re-id-masters.index') }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
               View all detections →
@@ -166,7 +166,7 @@
             </tbody>
           </table>
         </div>
-        @if ($recentEvents->count() > 0)
+        @if ($hasRecentEvents)
           <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
             <a href="#" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
               View all events →

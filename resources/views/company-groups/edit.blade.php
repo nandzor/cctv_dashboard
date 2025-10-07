@@ -1,44 +1,58 @@
 @extends('layouts.app')
 
 @section('title', 'Edit Company Group')
+@section('page-title', 'Edit Company Group')
 
 @section('content')
-  <div class="max-w-3xl mx-auto">
-    <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Edit Company Group</h1>
-      <p class="mt-2 text-gray-600">Update company group information</p>
-    </div>
+  <div class="max-w-3xl">
+    <x-card title="Update Group Information">
+      <div class="mb-6">
+        <div class="flex items-center justify-between">
+          <p class="text-sm text-gray-500">Modify the group details below</p>
+          <x-badge :variant="$companyGroup->status === 'active' ? 'success' : 'danger'">
+            {{ ucfirst($companyGroup->status) }}
+          </x-badge>
+        </div>
+      </div>
 
-    <x-card>
-      <form action="{{ route('company-groups.update', $companyGroup) }}" method="POST">
+      <form method="POST" action="{{ route('company-groups.update', $companyGroup) }}" class="space-y-5">
         @csrf
         @method('PUT')
 
-        <x-form-input label="Province Code" name="province_code" :value="$companyGroup->province_code" :required="true" />
+        <x-input name="province_code" label="Province Code" :value="$companyGroup->province_code" placeholder="e.g., JB (Jawa Barat)" required
+          hint="Short code identifier for the province" />
 
-        <x-form-input label="Province Name" name="province_name" :value="$companyGroup->province_name" :required="true" />
+        <x-input name="province_name" label="Province Name" :value="$companyGroup->province_name" placeholder="e.g., Jawa Barat" required
+          hint="Full name of the province" />
 
-        <x-form-input label="Group Name" name="group_name" :value="$companyGroup->group_name" :required="true" />
+        <x-input name="group_name" label="Group Name" :value="$companyGroup->group_name" placeholder="e.g., PT. Company Name" required
+          hint="Company group name" />
 
-        <x-form-input label="Address" name="address" type="textarea" :value="$companyGroup->address" />
+        <x-textarea name="address" label="Address" :value="$companyGroup->address" placeholder="Full address of the company group"
+          rows="3" hint="Complete address information" />
 
-        <x-form-input label="Phone" name="phone" type="tel" :value="$companyGroup->phone" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <x-input type="tel" name="phone" label="Phone" :value="$companyGroup->phone" placeholder="e.g., +62812345678"
+            hint="Contact phone number" />
+          <x-input type="email" name="email" label="Email" :value="$companyGroup->email" placeholder="e.g., contact@company.com"
+            hint="Contact email address" />
+        </div>
 
-        <x-form-input label="Email" name="email" type="email" :value="$companyGroup->email" />
-
-        <x-form-input label="Status" name="status" type="select" :required="true">
+        <x-select name="status" label="Status" :value="$companyGroup->status" required hint="Group status">
           <option value="active" {{ $companyGroup->status === 'active' ? 'selected' : '' }}>Active</option>
           <option value="inactive" {{ $companyGroup->status === 'inactive' ? 'selected' : '' }}>Inactive</option>
-        </x-form-input>
+        </x-select>
 
-        <div class="flex justify-end space-x-3 mt-6">
-          <a href="{{ route('company-groups.show', $companyGroup) }}"
-            class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+          <x-button variant="secondary" :href="route('company-groups.show', $companyGroup)">
             Cancel
-          </a>
-          <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          </x-button>
+          <x-button type="submit" variant="primary">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
             Update Group
-          </button>
+          </x-button>
         </div>
       </form>
     </x-card>

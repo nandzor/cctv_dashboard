@@ -10,35 +10,35 @@ abstract class BaseService
 {
     /**
      * The model instance
-     * 
+     *
      * @var Model
      */
     protected $model;
 
     /**
      * Fields to search in
-     * 
+     *
      * @var array
      */
     protected $searchableFields = [];
 
     /**
      * Default order by column
-     * 
+     *
      * @var string
      */
     protected $orderByColumn = 'created_at';
 
     /**
      * Default order direction
-     * 
+     *
      * @var string
      */
     protected $orderByDirection = 'desc';
 
     /**
      * Get paginated results with optional search
-     * 
+     *
      * @param string|null $search
      * @param int $perPage
      * @param array $filters
@@ -48,7 +48,7 @@ abstract class BaseService
     {
         // Validate per page value
         $perPage = $this->validatePerPage($perPage);
-        
+
         $query = $this->getBaseQuery();
 
         // Apply filters
@@ -69,7 +69,7 @@ abstract class BaseService
 
     /**
      * Search records with pagination
-     * 
+     *
      * @param string $search
      * @param int $perPage
      * @param array $filters
@@ -82,7 +82,7 @@ abstract class BaseService
 
     /**
      * Apply search to query
-     * 
+     *
      * @param Builder $query
      * @param string $search
      * @return Builder
@@ -102,7 +102,7 @@ abstract class BaseService
 
     /**
      * Apply filters to query
-     * 
+     *
      * @param Builder $query
      * @param array $filters
      * @return Builder
@@ -123,40 +123,55 @@ abstract class BaseService
     }
 
     /**
+     * Ensure model is initialized
+     *
+     * @throws \Exception
+     */
+    protected function ensureModelInitialized(): void
+    {
+        if (!$this->model) {
+            throw new \Exception('Model not initialized in service constructor');
+        }
+    }
+
+    /**
      * Get base query
-     * 
+     *
      * @return Builder
      */
     protected function getBaseQuery(): Builder
     {
+        $this->ensureModelInitialized();
         return $this->model->query();
     }
 
     /**
      * Find record by ID
-     * 
+     *
      * @param int $id
      * @return Model|null
      */
     public function findById(int $id): ?Model
     {
+        $this->ensureModelInitialized();
         return $this->model->find($id);
     }
 
     /**
      * Create new record
-     * 
+     *
      * @param array $data
      * @return Model
      */
     public function create(array $data): Model
     {
+        $this->ensureModelInitialized();
         return $this->model->create($data);
     }
 
     /**
      * Update record
-     * 
+     *
      * @param Model $model
      * @param array $data
      * @return bool
@@ -168,7 +183,7 @@ abstract class BaseService
 
     /**
      * Delete record
-     * 
+     *
      * @param Model $model
      * @return bool
      */
@@ -179,41 +194,42 @@ abstract class BaseService
 
     /**
      * Get all records
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getAll()
     {
+        $this->ensureModelInitialized();
         return $this->model->all();
     }
 
     /**
      * Validate and sanitize per page value
-     * 
+     *
      * @param int $perPage
      * @return int
      */
     protected function validatePerPage(int $perPage): int
     {
         $allowedPerPage = [10, 20, 50, 100];
-        
+
         if (!in_array($perPage, $allowedPerPage)) {
             return 10; // Default fallback
         }
-        
+
         return $perPage;
     }
 
     /**
      * Get available per page options
-     * 
+     *
      * @return array
      */
     public function getPerPageOptions(): array
     {
         return [
             10 => '10 per page',
-            20 => '20 per page', 
+            20 => '20 per page',
             50 => '50 per page',
             100 => '100 per page'
         ];

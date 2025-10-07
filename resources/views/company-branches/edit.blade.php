@@ -1,59 +1,78 @@
 @extends('layouts.app')
 
 @section('title', 'Edit Company Branch')
+@section('page-title', 'Edit Company Branch')
 
 @section('content')
-<div class="max-w-3xl mx-auto">
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Edit Company Branch</h1>
-        <p class="mt-2 text-gray-600">Update branch information</p>
-    </div>
+  <div class="max-w-3xl">
+    <x-card title="Update Branch Information">
+      <div class="mb-6">
+        <div class="flex items-center justify-between">
+          <p class="text-sm text-gray-500">Modify the branch details below</p>
+          <x-badge :variant="$companyBranch->status === 'active' ? 'success' : 'danger'">
+            {{ ucfirst($companyBranch->status) }}
+          </x-badge>
+        </div>
+      </div>
 
-    <x-card>
-        <form action="{{ route('company-branches.update', $companyBranch) }}" method="POST">
-            @csrf
-            @method('PUT')
+      <form method="POST" action="{{ route('company-branches.update', $companyBranch) }}" class="space-y-5">
+        @csrf
+        @method('PUT')
 
-            <x-form-input 
-                label="Company Group" 
-                name="group_id" 
-                type="select"
-                :required="true"
-            >
-                @foreach($companyGroups as $group)
-                    <option value="{{ $group->id }}" {{ $companyBranch->group_id == $group->id ? 'selected' : '' }}>
-                        {{ $group->group_name }} ({{ $group->province_name }})
-                    </option>
-                @endforeach
-            </x-form-input>
+        <x-select name="group_id" label="Company Group" :value="$companyBranch->group_id" required hint="Select the company group this branch belongs to">
+          <option value="">-- Select Group --</option>
+          @foreach($companyGroups as $group)
+            <option value="{{ $group->id }}" {{ $companyBranch->group_id == $group->id ? 'selected' : '' }}>
+              {{ $group->group_name }} ({{ $group->province_name }})
+            </option>
+          @endforeach
+        </x-select>
 
-            <x-form-input label="Branch Code" name="branch_code" :value="$companyBranch->branch_code" :required="true" />
-            <x-form-input label="Branch Name" name="branch_name" :value="$companyBranch->branch_name" :required="true" />
-            <x-form-input label="City Name" name="city_name" :value="$companyBranch->city_name" :required="true" />
-            <x-form-input label="Address" name="address" type="textarea" :value="$companyBranch->address" />
+        <x-input name="branch_code" label="Branch Code" :value="$companyBranch->branch_code" placeholder="e.g., JKT001" required
+          hint="Unique code identifier for the branch" />
 
-            <div class="grid grid-cols-2 gap-4">
-                <x-form-input label="Phone" name="phone" type="tel" :value="$companyBranch->phone" />
-                <x-form-input label="Email" name="email" type="email" :value="$companyBranch->email" />
-            </div>
+        <x-input name="branch_name" label="Branch Name" :value="$companyBranch->branch_name" placeholder="e.g., Jakarta Central Branch" required
+          hint="Descriptive name for the branch" />
 
-            <div class="grid grid-cols-2 gap-4">
-                <x-form-input label="Latitude" name="latitude" type="number" step="0.00000001" :value="$companyBranch->latitude" />
-                <x-form-input label="Longitude" name="longitude" type="number" step="0.00000001" :value="$companyBranch->longitude" />
-            </div>
+        <x-input name="city_name" label="City Name" :value="$companyBranch->city_name" placeholder="e.g., Central Jakarta" required
+          hint="City where the branch is located" />
 
-            <x-form-input label="Status" name="status" type="select" :required="true">
-                <option value="active" {{ $companyBranch->status === 'active' ? 'selected' : '' }}>Active</option>
-                <option value="inactive" {{ $companyBranch->status === 'inactive' ? 'selected' : '' }}>Inactive</option>
-            </x-form-input>
+        <x-textarea name="address" label="Address" :value="$companyBranch->address" placeholder="Full address of the branch"
+          rows="3" hint="Complete address information" />
 
-            <div class="flex justify-end space-x-3 mt-6">
-                <a href="{{ route('company-branches.show', $companyBranch) }}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</a>
-                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Update Branch</button>
-            </div>
-        </form>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <x-input type="tel" name="phone" label="Phone" :value="$companyBranch->phone" placeholder="+62812345678"
+            hint="Contact phone number" />
+          <x-input type="email" name="email" label="Email" :value="$companyBranch->email" placeholder="branch@company.com"
+            hint="Contact email address" />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <x-input type="number" name="latitude" label="Latitude" :value="$companyBranch->latitude" step="0.00000001" placeholder="-6.200000"
+            hint="Geographic latitude coordinate" />
+          <x-input type="number" name="longitude" label="Longitude" :value="$companyBranch->longitude" step="0.00000001" placeholder="106.816666"
+            hint="Geographic longitude coordinate" />
+        </div>
+
+        <x-select name="status" label="Status" :value="$companyBranch->status" required hint="Branch status">
+          <option value="active" {{ $companyBranch->status === 'active' ? 'selected' : '' }}>Active</option>
+          <option value="inactive" {{ $companyBranch->status === 'inactive' ? 'selected' : '' }}>Inactive</option>
+        </x-select>
+
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+          <x-button variant="secondary" :href="route('company-branches.show', $companyBranch)">
+            Cancel
+          </x-button>
+          <x-button type="submit" variant="primary">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Update Branch
+          </x-button>
+        </div>
+      </form>
     </x-card>
-</div>
+  </div>
 @endsection
 
 

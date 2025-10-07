@@ -66,11 +66,11 @@
                 <div class="space-y-4">
                     <div class="flex justify-between items-center pb-4 border-b border-gray-200">
                         <span class="text-gray-600">Total Devices</span>
-                        <span class="text-2xl font-bold text-blue-600">{{ $branch->deviceMasters->count() }}</span>
-                    </div>
-                    <div class="flex justify-between items-center pb-4 border-b border-gray-200">
+                        <span class="text-2xl font-bold text-blue-600">{{ $deviceCounts['total'] }}</span>
+                      </div>
+                      <div class="flex justify-between items-center pb-4 border-b border-gray-200">
                         <span class="text-gray-600">Active Devices</span>
-                        <span class="text-xl font-semibold text-green-600">{{ $branch->deviceMasters->where('status', 'active')->count() }}</span>
+                        <span class="text-xl font-semibold text-green-600">{{ $deviceCounts['active'] }}</span>
                     </div>
                 </div>
             </x-card>

@@ -35,13 +35,13 @@ class DashboardController extends Controller {
      * Display dashboard with comprehensive statistics
      */
     public function index() {
-        // User statistics
-        $totalUsers = $this->userService->getAll()->count();
+        // User statistics - use direct model query instead of service getAll
+        $totalUsers = \App\Models\User::count();
 
-        // Company statistics
-        $totalGroups = $this->companyGroupService->getAll()->count();
-        $totalBranches = $this->companyBranchService->getAll()->count();
-        $totalDevices = $this->deviceMasterService->getAll()->count();
+        // Company statistics - use direct model queries
+        $totalGroups = \App\Models\CompanyGroup::count();
+        $totalBranches = \App\Models\CompanyBranch::count();
+        $totalDevices = \App\Models\DeviceMaster::count();
 
         // Re-ID statistics (today)
         $reIdStats = $this->reIdMasterService->getStatistics(['date' => now()->toDateString()]);
@@ -59,11 +59,16 @@ class DashboardController extends Controller {
             ->orderBy('date')
             ->get();
 
+        $maxDetectionCount = $detectionTrend->max('count') ?: 1;
+
         // Recent events (last 10)
         $recentEvents = EventLog::with(['branch', 'device'])
             ->latest('event_timestamp')
             ->limit(10)
             ->get();
+
+        $hasRecentDetections = $recentDetections->count() > 0;
+        $hasRecentEvents = $recentEvents->count() > 0;
 
         return view('dashboard.index', compact(
             'totalUsers',
@@ -72,8 +77,11 @@ class DashboardController extends Controller {
             'totalDevices',
             'reIdStats',
             'recentDetections',
+            'hasRecentDetections',
             'detectionTrend',
-            'recentEvents'
+            'maxDetectionCount',
+            'recentEvents',
+            'hasRecentEvents'
         ));
     }
 }

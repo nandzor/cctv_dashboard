@@ -1,115 +1,72 @@
 @extends('layouts.app')
 
 @section('title', 'Create Company Branch')
+@section('page-title', 'Create New Company Branch')
 
 @section('content')
-<div class="max-w-3xl mx-auto">
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Create Company Branch</h1>
-        <p class="mt-2 text-gray-600">Add a new city-level company branch</p>
-    </div>
+  <div class="max-w-3xl">
+    <x-card title="Branch Information">
+      <div class="mb-6">
+        <p class="text-sm text-gray-500">Fill in the details to create a new company branch</p>
+      </div>
 
-    <x-card>
-        <form action="{{ route('company-branches.store') }}" method="POST">
-            @csrf
+      <form method="POST" action="{{ route('company-branches.store') }}" class="space-y-5">
+        @csrf
 
-            <x-form-input 
-                label="Company Group" 
-                name="group_id" 
-                type="select"
-                :required="true"
-            >
-                <option value="">-- Select Group --</option>
-                @foreach($companyGroups as $group)
-                    <option value="{{ $group->id }}" {{ old('group_id') == $group->id ? 'selected' : '' }}>
-                        {{ $group->group_name }} ({{ $group->province_name }})
-                    </option>
-                @endforeach
-            </x-form-input>
+        <x-select name="group_id" label="Company Group" required hint="Select the company group this branch belongs to">
+          <option value="">-- Select Group --</option>
+          @foreach($companyGroups as $group)
+            <option value="{{ $group->id }}" {{ old('group_id') == $group->id ? 'selected' : '' }}>
+              {{ $group->group_name }} ({{ $group->province_name }})
+            </option>
+          @endforeach
+        </x-select>
 
-            <x-form-input 
-                label="Branch Code" 
-                name="branch_code" 
-                :required="true"
-                placeholder="e.g., JKT001"
-            />
+        <x-input name="branch_code" label="Branch Code" placeholder="e.g., JKT001" required
+          hint="Unique code identifier for the branch" />
 
-            <x-form-input 
-                label="Branch Name" 
-                name="branch_name" 
-                :required="true"
-                placeholder="e.g., Jakarta Central Branch"
-            />
+        <x-input name="branch_name" label="Branch Name" placeholder="e.g., Jakarta Central Branch" required
+          hint="Descriptive name for the branch" />
 
-            <x-form-input 
-                label="City Name" 
-                name="city_name" 
-                :required="true"
-                placeholder="e.g., Central Jakarta"
-            />
+        <x-input name="city_name" label="City Name" placeholder="e.g., Central Jakarta" required
+          hint="City where the branch is located" />
 
-            <x-form-input 
-                label="Address" 
-                name="address" 
-                type="textarea"
-                placeholder="Full address"
-            />
+        <x-textarea name="address" label="Address" placeholder="Full address of the branch"
+          rows="3" hint="Complete address information" />
 
-            <div class="grid grid-cols-2 gap-4">
-                <x-form-input 
-                    label="Phone" 
-                    name="phone" 
-                    type="tel"
-                    placeholder="+62812345678"
-                />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <x-input type="tel" name="phone" label="Phone" placeholder="+62812345678"
+            hint="Contact phone number" />
+          <x-input type="email" name="email" label="Email" placeholder="branch@company.com"
+            hint="Contact email address" />
+        </div>
 
-                <x-form-input 
-                    label="Email" 
-                    name="email" 
-                    type="email"
-                    placeholder="branch@company.com"
-                />
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <x-input type="number" name="latitude" label="Latitude" step="0.00000001" placeholder="-6.200000"
+            hint="Geographic latitude coordinate" />
+          <x-input type="number" name="longitude" label="Longitude" step="0.00000001" placeholder="106.816666"
+            hint="Geographic longitude coordinate" />
+        </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <x-form-input 
-                    label="Latitude" 
-                    name="latitude" 
-                    type="number"
-                    step="0.00000001"
-                    placeholder="-6.200000"
-                />
+        <x-select name="status" label="Status" required hint="Branch status">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </x-select>
 
-                <x-form-input 
-                    label="Longitude" 
-                    name="longitude" 
-                    type="number"
-                    step="0.00000001"
-                    placeholder="106.816666"
-                />
-            </div>
-
-            <x-form-input 
-                label="Status" 
-                name="status" 
-                type="select"
-                :required="true"
-            >
-                <option value="active" selected>Active</option>
-                <option value="inactive">Inactive</option>
-            </x-form-input>
-
-            <div class="flex justify-end space-x-3 mt-6">
-                <a href="{{ route('company-branches.index') }}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                    Cancel
-                </a>
-                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    Create Branch
-                </button>
-            </div>
-        </form>
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+          <x-button variant="secondary" :href="route('company-branches.index')">
+            Cancel
+          </x-button>
+          <x-button type="submit" variant="primary">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Create Branch
+          </x-button>
+        </div>
+      </form>
     </x-card>
-</div>
+  </div>
 @endsection
 
 

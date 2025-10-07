@@ -55,11 +55,6 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            @php
-              $groupedReports = $reports->groupBy('branch_id');
-              $dailyDetections = [];
-            @endphp
-
             @forelse($reports as $report)
               <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 text-sm font-medium text-gray-900">
@@ -111,7 +106,7 @@
               <tr>
                 <td colspan="2" class="px-6 py-4 text-sm text-gray-900">Monthly Total</td>
                 <td class="px-6 py-4 text-sm text-center text-blue-600">
-                  {{ $reports->unique('branch_id')->sum(function ($r) {return $r->total_devices;}) }}
+                  {{ $totalDevices }}
                 </td>
                 <td class="px-6 py-4 text-sm text-center text-purple-600">
                   {{ number_format($monthlyStats['total_detections']) }}
@@ -123,7 +118,7 @@
                   {{ $monthlyStats['unique_persons'] }}
                 </td>
                 <td class="px-6 py-4 text-sm text-right text-gray-900">
-                  {{ number_format($monthlyStats['total_detections'] / max($reports->count(), 1), 1) }}
+                  {{ number_format($avgDetectionsPerDay, 1) }}
                 </td>
               </tr>
             </tfoot>
@@ -172,24 +167,7 @@
       <div class="mt-6">
         <x-card title="Branch Performance Comparison">
           <div class="space-y-4">
-            @php
-              $branchStats = $reports
-                  ->groupBy('branch_id')
-                  ->map(function ($items) {
-                      return [
-                          'branch' => $items->first()->branch,
-                          'total_detections' => $items->sum('total_detections'),
-                          'total_events' => $items->sum('total_events'),
-                          'unique_persons' => $items->max('unique_person_count'),
-                          'avg_per_day' => $items->avg('total_detections'),
-                      ];
-                  })
-                  ->sortByDesc('total_detections');
-
-              $maxBranchDetections = $branchStats->max('total_detections') ?: 1;
-            @endphp
-
-            @foreach ($branchStats as $branchId => $stat)
+            @foreach ($branchStats->sortByDesc('total_detections') as $branchId => $stat)
               <div class="pb-4 border-b border-gray-100 last:border-b-0">
                 <div class="flex justify-between items-start mb-2">
                   <div>

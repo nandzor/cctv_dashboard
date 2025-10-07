@@ -52,8 +52,9 @@ class ReIdMasterController extends Controller {
 
         // Get all dates this person was detected
         $allDetections = $this->reIdMasterService->getAllDetectionsForPerson($reId);
+        $hasMultipleDetections = $allDetections->count() > 1;
 
-        return view('re-id-masters.show', compact('person', 'allDetections', 'date'));
+        return view('re-id-masters.show', compact('person', 'allDetections', 'hasMultipleDetections', 'date'));
     }
 
     /**

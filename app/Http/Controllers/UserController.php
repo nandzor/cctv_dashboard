@@ -70,7 +70,12 @@ class UserController extends Controller {
                 ->with('error', 'User not found.');
         }
 
-        return view('users.show', compact('user'));
+        // Calculate days since created
+        $createdDate = $user->created_at->startOfDay();
+        $currentDate = now()->startOfDay();
+        $daysSinceCreated = (int) $createdDate->diffInDays($currentDate);
+
+        return view('users.show', compact('user', 'daysSinceCreated'));
     }
 
     /**

@@ -118,9 +118,7 @@
             </div>
             <div class="text-center">
               @php
-                $createdDate = $user->created_at->startOfDay();
-                $currentDate = now()->startOfDay();
-                $daysAgo = (int) $createdDate->diffInDays($currentDate);
+                $daysAgo = $daysSinceCreated;
               @endphp
               <p class="text-2xl font-bold text-green-600">
                 @if ($daysAgo === 0)

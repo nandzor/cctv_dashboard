@@ -1,43 +1,52 @@
 @extends('layouts.app')
 
 @section('title', 'Create Company Group')
+@section('page-title', 'Create New Company Group')
 
 @section('content')
-  <div class="max-w-3xl mx-auto">
-    <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Create Company Group</h1>
-      <p class="mt-2 text-gray-600">Add a new province-level company group</p>
-    </div>
+  <div class="max-w-3xl">
+    <x-card title="Group Information">
+      <div class="mb-6">
+        <p class="text-sm text-gray-500">Fill in the details to create a new company group</p>
+      </div>
 
-    <x-card>
-      <form action="{{ route('company-groups.store') }}" method="POST">
+      <form method="POST" action="{{ route('company-groups.store') }}" class="space-y-5">
         @csrf
 
-        <x-form-input label="Province Code" name="province_code" :required="true" placeholder="e.g., JB (Jawa Barat)" />
+        <x-input name="province_code" label="Province Code" placeholder="e.g., JB (Jawa Barat)" required
+          hint="Short code identifier for the province" />
 
-        <x-form-input label="Province Name" name="province_name" :required="true" placeholder="e.g., Jawa Barat" />
+        <x-input name="province_name" label="Province Name" placeholder="e.g., Jawa Barat" required
+          hint="Full name of the province" />
 
-        <x-form-input label="Group Name" name="group_name" :required="true" placeholder="e.g., PT. Company Name" />
+        <x-input name="group_name" label="Group Name" placeholder="e.g., PT. Company Name" required
+          hint="Company group name" />
 
-        <x-form-input label="Address" name="address" type="textarea" placeholder="Full address" />
+        <x-textarea name="address" label="Address" placeholder="Full address of the company group"
+          rows="3" hint="Complete address information" />
 
-        <x-form-input label="Phone" name="phone" type="tel" placeholder="e.g., +62812345678" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <x-input type="tel" name="phone" label="Phone" placeholder="e.g., +62812345678"
+            hint="Contact phone number" />
+          <x-input type="email" name="email" label="Email" placeholder="e.g., contact@company.com"
+            hint="Contact email address" />
+        </div>
 
-        <x-form-input label="Email" name="email" type="email" placeholder="e.g., contact@company.com" />
-
-        <x-form-input label="Status" name="status" type="select" :required="true">
-          <option value="active" selected>Active</option>
+        <x-select name="status" label="Status" required hint="Group status">
+          <option value="active">Active</option>
           <option value="inactive">Inactive</option>
-        </x-form-input>
+        </x-select>
 
-        <div class="flex justify-end space-x-3 mt-6">
-          <a href="{{ route('company-groups.index') }}"
-            class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+          <x-button variant="secondary" :href="route('company-groups.index')">
             Cancel
-          </a>
-          <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          </x-button>
+          <x-button type="submit" variant="primary">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
             Create Group
-          </button>
+          </x-button>
         </div>
       </form>
     </x-card>

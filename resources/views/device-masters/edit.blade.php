@@ -1,58 +1,91 @@
 @extends('layouts.app')
 
 @section('title', 'Edit Device')
+@section('page-title', 'Edit Device')
 
 @section('content')
-<div class="max-w-3xl mx-auto">
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Edit Device</h1>
-        <p class="mt-2 text-gray-600">Update device information</p>
-    </div>
+  <div class="max-w-3xl">
+    <x-card title="Update Device Information">
+      <div class="mb-6">
+        <div class="flex items-center justify-between">
+          <p class="text-sm text-gray-500">Modify the device details below</p>
+          <x-badge :variant="$deviceMaster->status === 'active' ? 'success' : 'danger'">
+            {{ ucfirst($deviceMaster->status) }}
+          </x-badge>
+        </div>
+      </div>
 
-    <x-card>
-        <form action="{{ route('device-masters.update', $deviceMaster) }}" method="POST">
-            @csrf
-            @method('PUT')
+      <form method="POST" action="{{ route('device-masters.update', $deviceMaster) }}" class="space-y-5">
+        @csrf
+        @method('PUT')
 
-            <x-form-input label="Device ID" name="device_id" :value="$deviceMaster->device_id" :required="true" />
-            <x-form-input label="Device Name" name="device_name" :value="$deviceMaster->device_name" :required="true" />
+        <x-input name="device_id" label="Device ID" :value="$deviceMaster->device_id" placeholder="e.g., CAMERA_001" required
+          hint="Unique identifier for the device" />
 
-            <x-form-input label="Device Type" name="device_type" type="select" :required="true">
-                <option value="camera" {{ $deviceMaster->device_type === 'camera' ? 'selected' : '' }}>Camera</option>
-                <option value="node_ai" {{ $deviceMaster->device_type === 'node_ai' ? 'selected' : '' }}>Node AI</option>
-                <option value="mikrotik" {{ $deviceMaster->device_type === 'mikrotik' ? 'selected' : '' }}>Mikrotik</option>
-                <option value="cctv" {{ $deviceMaster->device_type === 'cctv' ? 'selected' : '' }}>CCTV</option>
-            </x-form-input>
+        <x-input name="device_name" label="Device Name" :value="$deviceMaster->device_name" placeholder="Main Entrance Camera" required
+          hint="Descriptive name for the device" />
 
-            <x-form-input label="Branch" name="branch_id" type="select" :required="true">
-                @foreach($companyBranches as $branch)
-                    <option value="{{ $branch->id }}" {{ $deviceMaster->branch_id == $branch->id ? 'selected' : '' }}>
-                        {{ $branch->branch_name }} ({{ $branch->city_name }})
-                    </option>
-                @endforeach
-            </x-form-input>
+        <x-select name="device_type" label="Device Type" :value="$deviceMaster->device_type" required hint="Select the type of device">
+          <option value="">-- Select Device Type --</option>
+          <option value="camera" {{ $deviceMaster->device_type === 'camera' ? 'selected' : '' }}>Camera</option>
+          <option value="node_ai" {{ $deviceMaster->device_type === 'node_ai' ? 'selected' : '' }}>Node AI</option>
+          <option value="mikrotik" {{ $deviceMaster->device_type === 'mikrotik' ? 'selected' : '' }}>Mikrotik</option>
+          <option value="cctv" {{ $deviceMaster->device_type === 'cctv' ? 'selected' : '' }}>CCTV</option>
+        </x-select>
 
-            <x-form-input label="URL / IP Address" name="url" :value="$deviceMaster->url" />
-            
-            <div class="grid grid-cols-2 gap-4">
-                <x-form-input label="Username" name="username" :value="$deviceMaster->username" />
-                <x-form-input label="Password" name="password" type="password" placeholder="Leave blank to keep current" />
+        <x-select name="branch_id" label="Branch" :value="$deviceMaster->branch_id" required hint="Select the branch where this device is located">
+          <option value="">-- Select Branch --</option>
+          @foreach($companyBranches as $branch)
+            <option value="{{ $branch->id }}" {{ $deviceMaster->branch_id == $branch->id ? 'selected' : '' }}>
+              {{ $branch->branch_name }} ({{ $branch->city_name }})
+            </option>
+          @endforeach
+        </x-select>
+
+        <x-input name="url" label="URL / IP Address" :value="$deviceMaster->url" placeholder="rtsp://192.168.1.100:554/stream1"
+          hint="Network address or URL for the device" />
+
+        <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div class="flex">
+            <svg class="w-5 h-5 text-yellow-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p class="text-sm font-medium text-yellow-800">Credential Update</p>
+              <p class="text-xs text-yellow-700 mt-1">Leave password field empty to keep the current password</p>
             </div>
+          </div>
+        </div>
 
-            <x-form-input label="Notes" name="notes" type="textarea" :value="$deviceMaster->notes" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <x-input name="username" label="Username" :value="$deviceMaster->username" placeholder="Enter username"
+            hint="Login username for the device" />
+          <x-input type="password" name="password" label="New Password" placeholder="Leave blank to keep current"
+            hint="Login password for the device" />
+        </div>
 
-            <x-form-input label="Status" name="status" type="select" :required="true">
-                <option value="active" {{ $deviceMaster->status === 'active' ? 'selected' : '' }}>Active</option>
-                <option value="inactive" {{ $deviceMaster->status === 'inactive' ? 'selected' : '' }}>Inactive</option>
-            </x-form-input>
+        <x-textarea name="notes" label="Notes" :value="$deviceMaster->notes" placeholder="Additional information about the device..."
+          rows="3" hint="Optional notes or comments" />
 
-            <div class="flex justify-end space-x-3 mt-6">
-                <a href="{{ route('device-masters.show', $deviceMaster) }}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</a>
-                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Update Device</button>
-            </div>
-        </form>
+        <x-select name="status" label="Status" :value="$deviceMaster->status" required hint="Device status">
+          <option value="active" {{ $deviceMaster->status === 'active' ? 'selected' : '' }}>Active</option>
+          <option value="inactive" {{ $deviceMaster->status === 'inactive' ? 'selected' : '' }}>Inactive</option>
+        </x-select>
+
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+          <x-button variant="secondary" :href="route('device-masters.show', $deviceMaster)">
+            Cancel
+          </x-button>
+          <x-button type="submit" variant="primary">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Update Device
+          </x-button>
+        </div>
+      </form>
     </x-card>
-</div>
+  </div>
 @endsection
 
 

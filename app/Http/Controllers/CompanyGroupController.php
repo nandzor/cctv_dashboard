@@ -28,10 +28,10 @@ class CompanyGroupController extends Controller {
             $filters['status'] = $status;
         }
 
-        $groups = $this->companyGroupService->getPaginate($search, $perPage, $filters);
+        $companyGroups = $this->companyGroupService->getPaginate($search, $perPage, $filters);
         $statistics = $this->companyGroupService->getStatistics();
 
-        return view('company-groups.index', compact('groups', 'statistics', 'search', 'perPage', 'status'));
+        return view('company-groups.index', compact('companyGroups', 'statistics', 'search', 'perPage', 'status'));
     }
 
     /**
@@ -72,7 +72,9 @@ class CompanyGroupController extends Controller {
             abort(404, 'Company group not found.');
         }
 
-        return view('company-groups.show', compact('group'));
+        $branchCounts = $this->companyGroupService->getBranchCounts($group);
+
+        return view('company-groups.show', compact('group', 'branchCounts'));
     }
 
     /**

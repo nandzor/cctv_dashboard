@@ -95,6 +95,19 @@ class CompanyBranchService extends BaseService {
     }
 
     /**
+     * Get device counts for a branch
+     */
+    public function getDeviceCounts(CompanyBranch $branch): array {
+        $devices = $branch->devices;
+
+        return [
+            'total' => $devices->count(),
+            'active' => $devices->where('status', 'active')->count(),
+            'inactive' => $devices->where('status', 'inactive')->count(),
+        ];
+    }
+
+    /**
      * Get statistics
      */
     public function getStatistics(): array {

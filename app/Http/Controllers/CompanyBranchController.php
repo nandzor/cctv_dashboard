@@ -55,7 +55,10 @@ class CompanyBranchController extends Controller {
     public function show(CompanyBranch $companyBranch) {
         $branch = $this->companyBranchService->getBranchWithRelationships($companyBranch->id);
         if (!$branch) abort(404);
-        return view('company-branches.show', compact('branch'));
+        
+        $deviceCounts = $this->companyBranchService->getDeviceCounts($branch);
+        
+        return view('company-branches.show', compact('branch', 'deviceCounts'));
     }
 
     public function edit(CompanyBranch $companyBranch) {

@@ -17,6 +17,13 @@ class CompanyGroupService extends BaseService {
     }
 
     /**
+     * Override base query to include branches relationship and count
+     */
+    protected function getBaseQuery(): \Illuminate\Database\Eloquent\Builder {
+        return parent::getBaseQuery()->with('branches')->withCount('branches');
+    }
+
+    /**
      * Get all active groups with branch count
      */
     public function getActiveGroupsWithBranchCount() {
@@ -77,6 +84,19 @@ class CompanyGroupService extends BaseService {
      */
     public function activateGroup(CompanyGroup $group): bool {
         return $group->update(['status' => 'active']);
+    }
+
+    /**
+     * Get branch counts for a group
+     */
+    public function getBranchCounts(CompanyGroup $group): array {
+        $branches = $group->branches;
+
+        return [
+            'total' => $branches->count(),
+            'active' => $branches->where('status', 'active')->count(),
+            'inactive' => $branches->where('status', 'inactive')->count(),
+        ];
     }
 
     /**

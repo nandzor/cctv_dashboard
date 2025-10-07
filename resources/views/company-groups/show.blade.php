@@ -72,17 +72,15 @@
           <div class="space-y-4">
             <div class="flex justify-between items-center pb-4 border-b border-gray-200">
               <span class="text-gray-600">Total Branches</span>
-              <span class="text-2xl font-bold text-blue-600">{{ $companyGroup->companyBranches->count() }}</span>
+              <span class="text-2xl font-bold text-blue-600">{{ $branchCounts['total'] }}</span>
             </div>
             <div class="flex justify-between items-center pb-4 border-b border-gray-200">
               <span class="text-gray-600">Active Branches</span>
-              <span
-                class="text-xl font-semibold text-green-600">{{ $companyGroup->companyBranches->where('status', 'active')->count() }}</span>
+              <span class="text-xl font-semibold text-green-600">{{ $branchCounts['active'] }}</span>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-gray-600">Inactive Branches</span>
-              <span
-                class="text-xl font-semibold text-red-600">{{ $companyGroup->companyBranches->where('status', 'inactive')->count() }}</span>
+              <span class="text-xl font-semibold text-red-600">{{ $branchCounts['inactive'] }}</span>
             </div>
           </div>
         </x-card>
@@ -104,7 +102,7 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              @forelse($companyGroup->companyBranches as $branch)
+              @forelse($companyGroup->branches as $branch)
                 <tr class="hover:bg-gray-50">
                   <td class="px-6 py-4 text-sm text-gray-900">{{ $branch->branch_code }}</td>
                   <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $branch->branch_name }}</td>

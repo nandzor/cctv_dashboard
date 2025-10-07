@@ -122,6 +122,13 @@ class DeviceMaster extends Model {
     }
 
     /**
+     * Scope: Inactive devices
+     */
+    public function scopeInactive($query) {
+        return $query->where('status', 'inactive');
+    }
+
+    /**
      * Scope: By device type
      */
     public function scopeByType($query, $type) {

@@ -34,6 +34,8 @@ class ReportController extends Controller {
             ->orderBy('date')
             ->get();
 
+        $maxDailyCount = $dailyTrend->max('count') ?: 1;
+
         // Top branches
         $topBranches = ReIdBranchDetection::select('branch_id', DB::raw('COUNT(*) as detection_count'))
             ->whereBetween('detection_timestamp', [$dateFrom, $dateTo])
@@ -51,6 +53,7 @@ class ReportController extends Controller {
             'uniqueBranches',
             'uniqueDevices',
             'dailyTrend',
+            'maxDailyCount',
             'topBranches',
             'branches',
             'dateFrom',
@@ -100,6 +103,35 @@ class ReportController extends Controller {
             'total_events' => $reports->sum('total_events'),
         ];
 
-        return view('reports.monthly', compact('reports', 'branches', 'month', 'branchId', 'monthlyStats'));
+        // Additional calculations for view
+        $groupedReports = $reports->groupBy('branch_id');
+        $totalDevices = $reports->unique('branch_id')->sum(function ($r) { return $r->total_devices; });
+        $avgDetectionsPerDay = $monthlyStats['total_detections'] / max($reports->count(), 1);
+        
+        // Branch statistics
+        $branchStats = $reports->groupBy('branch_id')->map(function ($items) {
+            return [
+                'branch' => $items->first()->branch,
+                'total_detections' => $items->sum('total_detections'),
+                'total_events' => $items->sum('total_events'),
+                'unique_persons' => $items->max('unique_person_count'),
+                'avg_per_day' => $items->avg('total_detections'),
+            ];
+        });
+        
+        $maxBranchDetections = $branchStats->max('total_detections') ?: 1;
+
+        return view('reports.monthly', compact(
+            'reports', 
+            'branches', 
+            'month', 
+            'branchId', 
+            'monthlyStats',
+            'groupedReports',
+            'totalDevices',
+            'avgDetectionsPerDay',
+            'branchStats',
+            'maxBranchDetections'
+        ));
     }
 }

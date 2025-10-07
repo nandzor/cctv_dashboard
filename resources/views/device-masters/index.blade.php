@@ -1,99 +1,178 @@
 @extends('layouts.app')
 
 @section('title', 'Device Masters')
+@section('page-title', 'Device Masters Management')
 
 @section('content')
-<div class="max-w-7xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Device Masters</h1>
-            <p class="mt-2 text-gray-600">Manage all CCTV devices and sensors</p>
+  <x-card>
+    <!-- Header -->
+    <div class="p-6 border-b border-gray-200">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+        <div class="flex-1 max-w-md">
+          <form method="GET" action="{{ route('device-masters.index') }}" class="flex">
+            <x-input name="search" :value="$search ?? ''" placeholder="Search devices..." class="rounded-r-none border-r-0" />
+            @if (request()->has('per_page'))
+              <input type="hidden" name="per_page" value="{{ request()->get('per_page') }}">
+            @endif
+            <button type="submit"
+              class="px-6 py-2 bg-gray-600 text-white rounded-r-lg hover:bg-gray-700 transition-colors">
+              Search
+            </button>
+          </form>
         </div>
-        <a href="{{ route('device-masters.create') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+
+        <div class="flex items-center space-x-4">
+          <!-- Per Page Selector -->
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-600">Show:</span>
+            <x-per-page-selector :options="$perPageOptions ?? [10, 25, 50, 100]" :current="$perPage ?? 10" :url="route('device-masters.index')" />
+          </div>
+
+          <!-- Add Device Button -->
+          <x-button variant="primary" size="sm" :href="route('device-masters.create')">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             Add Device
-        </a>
+          </x-button>
+        </div>
+      </div>
     </div>
 
-    <x-card class="mb-6">
-        <form method="GET" class="flex gap-4">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search devices..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg">
-            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Search</button>
-        </form>
-    </x-card>
+    <!-- Table -->
+    <x-table :headers="['Device ID', 'Device Name', 'Type', 'Branch', 'Status', 'Actions']">
+      @forelse($deviceMasters as $device)
+        <tr class="hover:bg-blue-50 transition-colors">
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 h-10 w-10">
+                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-md">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              </div>
+              <div class="ml-4">
+                <div class="text-sm font-medium text-gray-900">{{ $device->device_id }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm text-gray-900">{{ $device->device_name }}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <x-badge :variant="$device->device_type === 'camera' ? 'primary' : ($device->device_type === 'node_ai' ? 'purple' : ($device->device_type === 'mikrotik' ? 'success' : 'gray'))">
+              {{ ucfirst(str_replace('_', ' ', $device->device_type)) }}
+            </x-badge>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            {{ $device->companyBranch->branch_name ?? 'N/A' }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <x-badge :variant="$device->status === 'active' ? 'success' : 'danger'">
+              {{ ucfirst($device->status) }}
+            </x-badge>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <x-action-dropdown>
+              <x-dropdown-link :href="route('device-masters.show', $device)">
+                👁️ View Details
+              </x-dropdown-link>
 
-    <x-card :padding="false">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Device ID</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Device Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @forelse($deviceMasters->items() as $device)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $device->device_id }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">{{ $device->device_name }}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-semibold rounded 
-                                @if($device->device_type === 'camera') bg-blue-100 text-blue-800
-                                @elseif($device->device_type === 'node_ai') bg-purple-100 text-purple-800
-                                @elseif($device->device_type === 'mikrotik') bg-green-100 text-green-800
-                                @else bg-gray-100 text-gray-800
-                                @endif">
-                                {{ ucfirst(str_replace('_', ' ', $device->device_type)) }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-500">{{ $device->companyBranch->branch_name ?? 'N/A' }}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $device->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                {{ ucfirst($device->status) }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
-                            <a href="{{ route('device-masters.show', $device) }}" class="text-blue-600 hover:text-blue-900">View</a>
-                            <a href="{{ route('device-masters.edit', $device) }}" class="text-yellow-600 hover:text-yellow-900">Edit</a>
-                            <button @click="confirmDelete({{ $device->id }})" class="text-red-600 hover:text-red-900">Delete</button>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-8 text-center text-gray-400">No devices found</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-        @if($deviceMasters->hasPages())
-            <div class="px-6 py-4 border-t">{{ $deviceMasters->links() }}</div>
+              <x-dropdown-link :href="route('device-masters.edit', $device)">
+                ✏️ Edit Device
+              </x-dropdown-link>
+
+              <x-dropdown-divider />
+
+              <x-dropdown-button type="button" onclick="confirmDelete({{ $device->id }})" variant="danger">
+                🗑️ Delete Device
+              </x-dropdown-button>
+
+              <form id="delete-form-{{ $device->id }}" action="{{ route('device-masters.destroy', $device->id) }}" method="POST"
+                class="hidden">
+                @csrf
+                @method('DELETE')
+              </form>
+            </x-action-dropdown>
+          </td>
+        </tr>
+      @empty
+        <tr>
+          <td colspan="6" class="px-6 py-12 text-center">
+            <div class="flex flex-col items-center justify-center">
+              <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <p class="text-gray-500 text-lg font-medium">No devices found</p>
+              <p class="text-gray-400 text-sm mt-1">Try adjusting your search criteria</p>
+            </div>
+          </td>
+        </tr>
+      @endforelse
+    </x-table>
+
+    <!-- Pagination Info & Controls -->
+    <div class="px-6 py-4 border-t border-gray-200">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+        <!-- Pagination Info -->
+        <div class="text-sm text-gray-700">
+          Showing
+          <span class="font-medium">{{ $deviceMasters->firstItem() ?? 0 }}</span>
+          to
+          <span class="font-medium">{{ $deviceMasters->lastItem() ?? 0 }}</span>
+          of
+          <span class="font-medium">{{ $deviceMasters->total() }}</span>
+          results
+          @if (request()->has('search'))
+            for "<span class="font-medium text-blue-600">{{ request()->get('search') }}</span>"
+          @endif
+        </div>
+
+        <!-- Pagination Controls -->
+        @if ($deviceMasters->hasPages())
+          <x-pagination :paginator="$deviceMasters" />
         @endif
-    </x-card>
-</div>
+      </div>
+    </div>
+  </x-card>
 
-<x-confirm-modal id="confirm-delete" title="Delete Device" message="Delete this device?" />
-<script>
-    let pendingDeleteId = null;
-    function confirmDelete(id) {
-        pendingDeleteId = id;
-        window.dispatchEvent(new CustomEvent('open-modal-confirm-delete'));
-    }
-    window.addEventListener('confirm-confirm-delete', function() {
-        if (pendingDeleteId) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/device-masters/${pendingDeleteId}`;
-            form.innerHTML = `@csrf @method('DELETE')`;
-            document.body.appendChild(form);
-            form.submit();
-        }
-    });
-</script>
+  <!-- Delete Confirmation Modal -->
+  <x-confirm-modal id="confirm-delete" title="Confirm Delete"
+    message="This action cannot be undone. The device will be permanently deleted." confirmText="Delete Device"
+    cancelText="Cancel" icon="warning" confirmAction="handleDeleteConfirm(data)" />
 @endsection
+
+@push('scripts')
+  <script>
+    // Store deviceId for deletion
+    let pendingDeleteDeviceId = null;
+
+    function confirmDelete(deviceId) {
+      pendingDeleteDeviceId = deviceId;
+      // Dispatch event to open modal with deviceId
+      window.dispatchEvent(new CustomEvent('open-modal-confirm-delete', {
+        detail: {
+          deviceId: deviceId
+        }
+      }));
+    }
+
+    function handleDeleteConfirm(data) {
+      const deviceId = data?.deviceId || pendingDeleteDeviceId;
+      if (deviceId) {
+        const form = document.getElementById('delete-form-' + deviceId);
+        if (form) {
+          form.submit();
+        }
+      }
+    }
+
+    // Make functions globally available
+    window.confirmDelete = confirmDelete;
+    window.handleDeleteConfirm = handleDeleteConfirm;
+  </script>
+@endpush
 
 

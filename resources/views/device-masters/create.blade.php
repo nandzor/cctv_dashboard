@@ -1,56 +1,71 @@
 @extends('layouts.app')
 
 @section('title', 'Create Device')
+@section('page-title', 'Create New Device')
 
 @section('content')
-<div class="max-w-3xl mx-auto">
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Create Device</h1>
-        <p class="mt-2 text-gray-600">Add a new device to the system</p>
-    </div>
+  <div class="max-w-3xl">
+    <x-card title="Device Information">
+      <div class="mb-6">
+        <p class="text-sm text-gray-500">Fill in the details to create a new device</p>
+      </div>
 
-    <x-card>
-        <form action="{{ route('device-masters.store') }}" method="POST">
-            @csrf
+      <form method="POST" action="{{ route('device-masters.store') }}" class="space-y-5">
+        @csrf
 
-            <x-form-input label="Device ID" name="device_id" :required="true" placeholder="e.g., CAMERA_001" />
-            <x-form-input label="Device Name" name="device_name" :required="true" placeholder="Main Entrance Camera" />
+        <x-input name="device_id" label="Device ID" placeholder="e.g., CAMERA_001" required
+          hint="Unique identifier for the device" />
 
-            <x-form-input label="Device Type" name="device_type" type="select" :required="true">
-                <option value="camera">Camera</option>
-                <option value="node_ai">Node AI</option>
-                <option value="mikrotik">Mikrotik</option>
-                <option value="cctv">CCTV</option>
-            </x-form-input>
+        <x-input name="device_name" label="Device Name" placeholder="Main Entrance Camera" required
+          hint="Descriptive name for the device" />
 
-            <x-form-input label="Branch" name="branch_id" type="select" :required="true">
-                <option value="">-- Select Branch --</option>
-                @foreach($companyBranches as $branch)
-                    <option value="{{ $branch->id }}">{{ $branch->branch_name }} ({{ $branch->city_name }})</option>
-                @endforeach
-            </x-form-input>
+        <x-select name="device_type" label="Device Type" required hint="Select the type of device">
+          <option value="">-- Select Device Type --</option>
+          <option value="camera">Camera</option>
+          <option value="node_ai">Node AI</option>
+          <option value="mikrotik">Mikrotik</option>
+          <option value="cctv">CCTV</option>
+        </x-select>
 
-            <x-form-input label="URL / IP Address" name="url" placeholder="rtsp://192.168.1.100:554/stream1" />
-            
-            <div class="grid grid-cols-2 gap-4">
-                <x-form-input label="Username" name="username" />
-                <x-form-input label="Password" name="password" type="password" />
-            </div>
+        <x-select name="branch_id" label="Branch" required hint="Select the branch where this device is located">
+          <option value="">-- Select Branch --</option>
+          @foreach($companyBranches as $branch)
+            <option value="{{ $branch->id }}">{{ $branch->branch_name }} ({{ $branch->city_name }})</option>
+          @endforeach
+        </x-select>
 
-            <x-form-input label="Notes" name="notes" type="textarea" placeholder="Additional information..." />
+        <x-input name="url" label="URL / IP Address" placeholder="rtsp://192.168.1.100:554/stream1"
+          hint="Network address or URL for the device" />
 
-            <x-form-input label="Status" name="status" type="select" :required="true">
-                <option value="active" selected>Active</option>
-                <option value="inactive">Inactive</option>
-            </x-form-input>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <x-input name="username" label="Username" placeholder="Enter username"
+            hint="Login username for the device" />
+          <x-input type="password" name="password" label="Password" placeholder="Enter password"
+            hint="Login password for the device" />
+        </div>
 
-            <div class="flex justify-end space-x-3 mt-6">
-                <a href="{{ route('device-masters.index') }}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</a>
-                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create Device</button>
-            </div>
-        </form>
+        <x-textarea name="notes" label="Notes" placeholder="Additional information about the device..."
+          rows="3" hint="Optional notes or comments" />
+
+        <x-select name="status" label="Status" required hint="Device status">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </x-select>
+
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+          <x-button variant="secondary" :href="route('device-masters.index')">
+            Cancel
+          </x-button>
+          <x-button type="submit" variant="primary">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Create Device
+          </x-button>
+        </div>
+      </form>
     </x-card>
-</div>
+  </div>
 @endsection
 
 

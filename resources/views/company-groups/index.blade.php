@@ -1,140 +1,180 @@
 @extends('layouts.app')
 
 @section('title', 'Company Groups')
+@section('page-title', 'Company Groups Management')
 
 @section('content')
-  <div class="max-w-7xl mx-auto">
+  <x-card>
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900">Company Groups</h1>
-        <p class="mt-2 text-gray-600">Manage province-level company groups</p>
+    <div class="p-6 border-b border-gray-200">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+        <div class="flex-1 max-w-md">
+          <form method="GET" action="{{ route('company-groups.index') }}" class="flex">
+            <x-input name="search" :value="$search ?? ''" placeholder="Search groups..." class="rounded-r-none border-r-0" />
+            @if (request()->has('per_page'))
+              <input type="hidden" name="per_page" value="{{ request()->get('per_page') }}">
+            @endif
+            <button type="submit"
+              class="px-6 py-2 bg-gray-600 text-white rounded-r-lg hover:bg-gray-700 transition-colors">
+              Search
+            </button>
+          </form>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <!-- Per Page Selector -->
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-600">Show:</span>
+            <x-per-page-selector :options="$perPageOptions ?? [10, 25, 50, 100]" :current="$perPage ?? 10" :url="route('company-groups.index')" />
+          </div>
+
+          <!-- Add Group Button -->
+          @if (auth()->user()->isAdmin())
+            <x-button variant="primary" size="sm" :href="route('company-groups.create')">
+              <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Group
+            </x-button>
+          @endif
+        </div>
       </div>
-      @if (auth()->user()->isAdmin())
-        <a href="{{ route('company-groups.create') }}"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Add Group
-        </a>
-      @endif
     </div>
 
-    <!-- Search & Filter -->
-    <x-card class="mb-6">
-      <form method="GET" action="{{ route('company-groups.index') }}" class="flex gap-4">
-        <div class="flex-1">
-          <input type="text" name="search" value="{{ request('search') }}"
-            placeholder="Search by province or group name..."
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+    <!-- Table -->
+    <x-table :headers="['Province', 'Group Name', 'Contact', 'Status', 'Branches', 'Actions']">
+      @forelse($companyGroups as $group)
+        <tr class="hover:bg-blue-50 transition-colors">
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 h-10 w-10">
+                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center shadow-md">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                  </svg>
+                </div>
+              </div>
+              <div class="ml-4">
+                <div class="text-sm font-medium text-gray-900">{{ $group->province_name }}</div>
+                <div class="text-sm text-gray-500">{{ $group->province_code }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm text-gray-900">{{ $group->group_name }}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm text-gray-900">{{ $group->phone }}</div>
+            <div class="text-sm text-gray-500">{{ $group->email }}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <x-badge :variant="$group->status === 'active' ? 'success' : 'danger'">
+              {{ ucfirst($group->status) }}
+            </x-badge>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            {{ $group->branches_count ?? 0 }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <x-action-dropdown>
+              <x-dropdown-link :href="route('company-groups.show', $group)">
+                👁️ View Details
+              </x-dropdown-link>
+
+              @if (auth()->user()->isAdmin())
+                <x-dropdown-link :href="route('company-groups.edit', $group)">
+                  ✏️ Edit Group
+                </x-dropdown-link>
+
+                <x-dropdown-divider />
+
+                <x-dropdown-button type="button" onclick="confirmDelete({{ $group->id }})" variant="danger">
+                  🗑️ Delete Group
+                </x-dropdown-button>
+
+                <form id="delete-form-{{ $group->id }}" action="{{ route('company-groups.destroy', $group->id) }}" method="POST"
+                  class="hidden">
+                  @csrf
+                  @method('DELETE')
+                </form>
+              @endif
+            </x-action-dropdown>
+          </td>
+        </tr>
+      @empty
+        <tr>
+          <td colspan="6" class="px-6 py-12 text-center">
+            <div class="flex flex-col items-center justify-center">
+              <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+              </svg>
+              <p class="text-gray-500 text-lg font-medium">No groups found</p>
+              <p class="text-gray-400 text-sm mt-1">Try adjusting your search criteria</p>
+            </div>
+          </td>
+        </tr>
+      @endforelse
+    </x-table>
+
+    <!-- Pagination Info & Controls -->
+    <div class="px-6 py-4 border-t border-gray-200">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+        <!-- Pagination Info -->
+        <div class="text-sm text-gray-700">
+          Showing
+          <span class="font-medium">{{ $companyGroups->firstItem() ?? 0 }}</span>
+          to
+          <span class="font-medium">{{ $companyGroups->lastItem() ?? 0 }}</span>
+          of
+          <span class="font-medium">{{ $companyGroups->total() }}</span>
+          results
+          @if (request()->has('search'))
+            for "<span class="font-medium text-blue-600">{{ request()->get('search') }}</span>"
+          @endif
         </div>
-        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Search</button>
-        @if (request('search'))
-          <a href="{{ route('company-groups.index') }}"
-            class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Clear</a>
+
+        <!-- Pagination Controls -->
+        @if ($companyGroups->hasPages())
+          <x-pagination :paginator="$companyGroups" />
         @endif
-      </form>
-    </x-card>
-
-    <!-- Groups Table -->
-    <x-card :padding="false">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Province</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Group Name</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branches</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            @forelse($companyGroups->items() as $group)
-              <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4">
-                  <div class="text-sm font-medium text-gray-900">{{ $group->province_name }}</div>
-                  <div class="text-sm text-gray-500">{{ $group->province_code }}</div>
-                </td>
-                <td class="px-6 py-4">
-                  <div class="text-sm font-medium text-gray-900">{{ $group->group_name }}</div>
-                </td>
-                <td class="px-6 py-4">
-                  <div class="text-sm text-gray-900">{{ $group->phone }}</div>
-                  <div class="text-sm text-gray-500">{{ $group->email }}</div>
-                </td>
-                <td class="px-6 py-4">
-                  <span
-                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $group->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                    {{ ucfirst($group->status) }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-900">
-                  {{ $group->companyBranches->count() }}
-                </td>
-                <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
-                  <a href="{{ route('company-groups.show', $group) }}" class="text-blue-600 hover:text-blue-900">View</a>
-                  @if (auth()->user()->isAdmin())
-                    <a href="{{ route('company-groups.edit', $group) }}"
-                      class="text-yellow-600 hover:text-yellow-900">Edit</a>
-                    <button @click="confirmDelete({{ $group->id }})"
-                      class="text-red-600 hover:text-red-900">Delete</button>
-                  @endif
-                </td>
-              </tr>
-            @empty
-              <tr>
-                <td colspan="6" class="px-6 py-8 text-center text-gray-400">
-                  No company groups found. @if (auth()->user()->isAdmin())
-                    <a href="{{ route('company-groups.create') }}" class="text-blue-600 hover:text-blue-800">Create one
-                      now</a>
-                  @endif
-                </td>
-              </tr>
-            @endforelse
-          </tbody>
-        </table>
       </div>
-
-      @if ($companyGroups->hasPages())
-        <div class="px-6 py-4 border-t border-gray-200">
-          {{ $companyGroups->links() }}
-        </div>
-      @endif
-    </x-card>
-  </div>
+    </div>
+  </x-card>
 
   <!-- Delete Confirmation Modal -->
-  <x-confirm-modal id="confirm-delete" title="Delete Company Group"
-    message="Are you sure you want to delete this company group? All associated branches and devices will also be affected."
-    confirmText="Delete" cancelText="Cancel" icon="warning" />
+  <x-confirm-modal id="confirm-delete" title="Confirm Delete"
+    message="This action cannot be undone. The group will be permanently deleted." confirmText="Delete Group"
+    cancelText="Cancel" icon="warning" confirmAction="handleDeleteConfirm(data)" />
+@endsection
 
+@push('scripts')
   <script>
-    let pendingDeleteId = null;
+    // Store groupId for deletion
+    let pendingDeleteGroupId = null;
 
-    function confirmDelete(id) {
-      pendingDeleteId = id;
+    function confirmDelete(groupId) {
+      pendingDeleteGroupId = groupId;
+      // Dispatch event to open modal with groupId
       window.dispatchEvent(new CustomEvent('open-modal-confirm-delete', {
         detail: {
-          id: id
+          groupId: groupId
         }
       }));
     }
 
-    window.addEventListener('confirm-confirm-delete', function() {
-      if (pendingDeleteId) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/company-groups/${pendingDeleteId}`;
-        form.innerHTML = `
-                @csrf
-                @method('DELETE')
-            `;
-        document.body.appendChild(form);
-        form.submit();
+    function handleDeleteConfirm(data) {
+      const groupId = data?.groupId || pendingDeleteGroupId;
+      if (groupId) {
+        const form = document.getElementById('delete-form-' + groupId);
+        if (form) {
+          form.submit();
+        }
       }
-    });
+    }
+
+    // Make functions globally available
+    window.confirmDelete = confirmDelete;
+    window.handleDeleteConfirm = handleDeleteConfirm;
   </script>
-@endsection
+@endpush
