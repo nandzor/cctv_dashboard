@@ -33,7 +33,7 @@ class CompanyBranchService extends BaseService {
         return CompanyBranch::with([
             'group',
             'devices' => function ($query) {
-                $query->active()->orderBy('device_name', 'asc');
+                $query->orderBy('device_name', 'asc');
             },
             'eventSettings',
             'cctvStreams'

@@ -90,7 +90,7 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($branch->deviceMasters as $device)
+                    @forelse($branch->devices as $device)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 text-sm text-gray-900">{{ $device->device_id }}</td>
                             <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $device->device_name }}</td>
