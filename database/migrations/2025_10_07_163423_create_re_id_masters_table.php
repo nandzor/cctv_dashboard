@@ -24,8 +24,9 @@ return new class extends Migration {
             $table->string('status', 20)->default('active');
             $table->timestamps();
 
-            // Unique constraint
+            // Unique constraints
             $table->unique(['re_id', 'detection_date']);
+            $table->unique('re_id'); // Add unique constraint on re_id for foreign key
 
             // Indexes
             $table->index('re_id');

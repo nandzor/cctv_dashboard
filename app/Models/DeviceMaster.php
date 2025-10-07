@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Crypt;
+use App\Helpers\EncryptionHelper;
 
 class DeviceMaster extends Model {
     use HasFactory;
@@ -76,8 +76,8 @@ class DeviceMaster extends Model {
      * Encrypt password before saving (if env enabled)
      */
     public function setPasswordAttribute($value) {
-        if ($value && env('ENCRYPT_DEVICE_CREDENTIALS', false)) {
-            $this->attributes['password'] = Crypt::encryptString($value);
+        if ($value && EncryptionHelper::shouldEncryptDeviceCredentials()) {
+            $this->attributes['password'] = EncryptionHelper::encrypt($value);
         } else {
             $this->attributes['password'] = $value;
         }
@@ -87,8 +87,29 @@ class DeviceMaster extends Model {
      * Decrypt password when accessing (if env enabled)
      */
     public function getPasswordAttribute($value) {
-        if ($value && env('ENCRYPT_DEVICE_CREDENTIALS', false)) {
-            return Crypt::decryptString($value);
+        if ($value && EncryptionHelper::shouldEncryptDeviceCredentials()) {
+            return EncryptionHelper::decrypt($value);
+        }
+        return $value;
+    }
+
+    /**
+     * Encrypt username before saving (if env enabled)
+     */
+    public function setUsernameAttribute($value) {
+        if ($value && EncryptionHelper::shouldEncryptDeviceCredentials()) {
+            $this->attributes['username'] = EncryptionHelper::encrypt($value);
+        } else {
+            $this->attributes['username'] = $value;
+        }
+    }
+
+    /**
+     * Decrypt username when accessing (if env enabled)
+     */
+    public function getUsernameAttribute($value) {
+        if ($value && EncryptionHelper::shouldEncryptDeviceCredentials()) {
+            return EncryptionHelper::decrypt($value);
         }
         return $value;
     }

@@ -11,12 +11,16 @@ return new class extends Migration {
      */
     public function up(): void {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('role', 20)->default('viewer')->after('email');
-            $table->index('role');
+            if (!Schema::hasColumn('users', 'role')) {
+                $table->string('role', 20)->default('viewer')->after('email');
+                $table->index('role');
+            }
         });
 
-        // Add CHECK constraint for role (PostgreSQL)
-        DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('admin', 'operator', 'viewer'))");
+        // Add CHECK constraint for role (PostgreSQL) - only if column was added
+        if (!Schema::hasColumn('users', 'role')) {
+            DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('admin', 'operator', 'viewer'))");
+        }
     }
 
     /**
