@@ -12,6 +12,8 @@ use App\Http\Controllers\CctvLiveStreamController;
 use App\Http\Controllers\EventLogController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ApiCredentialController;
+use App\Http\Controllers\BranchEventSettingController;
+use App\Http\Controllers\WhatsAppSettingsController;
 use Illuminate\Support\Facades\Route;
 
 // Guest routes
@@ -81,5 +83,15 @@ Route::middleware('auth')->group(function () {
         // API Credentials Management (Admin only)
         Route::get('api-credentials/{apiCredential}/test', [ApiCredentialController::class, 'test'])->name('api-credentials.test');
         Route::resource('api-credentials', ApiCredentialController::class);
+
+        // Branch Event Settings Management (Admin only)
+        Route::resource('branch-event-settings', BranchEventSettingController::class)->except(['create', 'store', 'destroy']);
+        Route::post('/branch-event-settings/{branchEventSetting}/toggle', [BranchEventSettingController::class, 'toggle'])->name('branch-event-settings.toggle');
+
+        // WhatsApp Settings Management (Admin only)
+        Route::resource('whatsapp-settings', WhatsAppSettingsController::class)->parameters([
+            'whatsapp-settings' => 'whatsappSettings'
+        ]);
+        Route::post('/whatsapp-settings/{whatsappSettings}/set-default', [WhatsAppSettingsController::class, 'setDefault'])->name('whatsapp-settings.set-default');
     });
 });

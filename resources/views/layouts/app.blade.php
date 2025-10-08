@@ -154,6 +154,18 @@
             <x-sidebar-icon :icon="'<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z\' />'" />
             API Credentials
           </x-sidebar-link>
+
+          <!-- Branch Event Settings -->
+          <x-sidebar-link :href="route('branch-event-settings.index')" :active="request()->routeIs('branch-event-settings.*')">
+            <x-sidebar-icon :icon="'<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z\' />'" />
+            Event Settings
+          </x-sidebar-link>
+
+          <!-- WhatsApp Settings -->
+          <x-sidebar-link :href="route('whatsapp-settings.index')" :active="request()->routeIs('whatsapp-settings.*')">
+            <x-sidebar-icon :icon="'<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z\' />'" />
+            WhatsApp Settings
+          </x-sidebar-link>
         @endif
       </nav>
 
