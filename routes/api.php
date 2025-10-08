@@ -7,30 +7,23 @@ use Illuminate\Support\Facades\Route;
 | API Routes
 |--------------------------------------------------------------------------
 |
-| CCTV Dashboard API with versioning support
-| Current version: v1 (latest)
+| CCTV Dashboard API with selective versioning
+| - Auth endpoints (login, register, logout, me): No versioning
+| - Other endpoints: Use /v1/ prefix
 |
 */
 
-// API Version 1 (Current - Latest)
+// Public authentication routes (no versioning)
+Route::post('/register', [\App\Http\Controllers\Api\V1\AuthController::class, 'register'])->name('register');
+Route::post('/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login'])->name('login');
+
+// Sanctum protected routes (no versioning)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [\App\Http\Controllers\Api\V1\AuthController::class, 'logout'])->name('logout');
+    Route::get('/me', [\App\Http\Controllers\Api\V1\AuthController::class, 'me'])->name('me');
+});
+
+// V1 API routes (with versioning)
 Route::prefix('v1')->group(function () {
     require __DIR__ . '/api_v1.php';
 });
-
-// Default API routes (redirect to latest version - v1)
-Route::any('/{any}', function () {
-    return response()->json([
-        'success' => false,
-        'message' => 'API endpoint not found. Please use versioned endpoints.',
-        'data' => [
-            'available_versions' => ['v1'],
-            'current_version' => 'v1',
-            'base_url' => url('/api/v1'),
-            'documentation' => url('/api/documentation'),
-        ],
-        'meta' => [
-            'timestamp' => now()->toIso8601String(),
-            'version' => '1.0',
-        ],
-    ], 404);
-})->where('any', '.*');
