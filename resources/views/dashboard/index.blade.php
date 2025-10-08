@@ -73,7 +73,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Recent Detections -->
       <x-card title="Recent Detections" :padding="false">
-        <div class="overflow-hidden">
+        <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
@@ -122,7 +122,7 @@
 
       <!-- Recent Events -->
       <x-card title="Recent Events" :padding="false">
-        <div class="overflow-hidden">
+        <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
