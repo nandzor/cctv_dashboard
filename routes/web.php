@@ -63,9 +63,11 @@ Route::middleware('auth')->group(function () {
     // Reports
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/dashboard', [ReportController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard/export', [ReportController::class, 'exportDashboard'])->name('dashboard.export');
         Route::get('/daily', [ReportController::class, 'daily'])->name('daily');
         Route::get('/daily/export', [ReportController::class, 'exportDaily'])->name('daily.export');
         Route::get('/monthly', [ReportController::class, 'monthly'])->name('monthly');
+        Route::get('/monthly/export', [ReportController::class, 'exportMonthly'])->name('monthly.export');
     });
 
     // Admin-only routes

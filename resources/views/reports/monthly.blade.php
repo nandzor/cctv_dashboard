@@ -4,34 +4,80 @@
 
 @section('content')
   <div class="max-w-7xl mx-auto">
-    <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Monthly Reports</h1>
-      <p class="mt-2 text-gray-600">View monthly aggregated activity reports</p>
+    <!-- Page Header with Export -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Monthly Reports</h1>
+        <p class="mt-2 text-gray-600">Report for {{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}</p>
+      </div>
+
+      @if ($reports->count() > 0)
+        <div class="mt-4 sm:mt-0">
+          <x-dropdown align="right" width="48">
+            <x-slot name="trigger">
+              <button type="button"
+                class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 transition-all shadow-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Export Report
+                <svg class="w-4 h-4 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clip-rule="evenodd" />
+                </svg>
+              </button>
+            </x-slot>
+
+            <x-dropdown-link :href="route('reports.monthly.export', [
+                'month' => $month,
+                'branch_id' => $branchId,
+                'format' => 'excel',
+            ])" variant="success">
+              <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+              </svg>
+              Export to Excel
+            </x-dropdown-link>
+
+            <x-dropdown-link :href="route('reports.monthly.export', [
+                'month' => $month,
+                'branch_id' => $branchId,
+                'format' => 'pdf',
+            ])" variant="danger">
+              <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+              Export to PDF
+            </x-dropdown-link>
+          </x-dropdown>
+        </div>
+      @endif
     </div>
 
     <!-- Filters -->
     <x-card class="mb-6">
-      <form method="GET" class="flex flex-wrap gap-4">
-        <div class="flex-1 min-w-[200px]">
-          <x-input type="month" name="month" label="Select Month" :value="$month" />
-        </div>
-        <div class="flex-1 min-w-[200px]">
-          <x-company-branch-select name="branch_id" label="Select Branch" :value="$branchId" placeholder="All Branches" />
-        </div>
-        <div class="flex items-end gap-2">
-          <x-button type="submit" variant="primary">
+      <form method="GET">
+        <div class="flex flex-col lg:flex-row lg:items-end gap-4">
+          <!-- Filter Fields -->
+          <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <x-input type="month" name="month" label="Select Month" :value="$month" />
+            <x-company-branch-select name="branch_id" label="Select Branch" :value="$branchId"
+              placeholder="All Branches" />
+          </div>
+
+          <!-- Action Button -->
+          <x-button type="submit" variant="primary" size="md" class="w-full md:w-auto">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            Generate Report
-          </x-button>
-          <x-button type="button" variant="success" onclick="exportToCSV()">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Export CSV
+            Apply Filters
           </x-button>
         </div>
       </form>
@@ -221,71 +267,14 @@
         </svg>
         Back to Reports Dashboard
       </x-button>
-      <div class="flex space-x-3">
-        <x-button variant="secondary" :href="route('reports.daily', ['date' => now()->toDateString()])">
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          View Today's Report
-        </x-button>
-        <x-button variant="secondary" onclick="window.print()">
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
-          Print Report
-        </x-button>
-      </div>
+      <x-button variant="secondary" :href="route('reports.daily', ['date' => now()->toDateString()])">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        View Today's Report
+      </x-button>
     </div>
   </div>
 
-  <script>
-    function exportToCSV() {
-      const table = document.getElementById('monthly-report-table');
-      let csv = [];
-
-      // Headers
-      const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
-      csv.push(headers.join(','));
-
-      // Rows
-      const rows = table.querySelectorAll('tbody tr');
-      rows.forEach(row => {
-        const cols = Array.from(row.querySelectorAll('td')).map(td => {
-          return '"' + td.textContent.trim().replace(/"/g, '""') + '"';
-        });
-        if (cols.length > 0) {
-          csv.push(cols.join(','));
-        }
-      });
-
-      // Download
-      const csvContent = csv.join('\n');
-      const blob = new Blob([csvContent], {
-        type: 'text/csv;charset=utf-8;'
-      });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'monthly_report_{{ $month }}.csv');
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  </script>
-
-  <style>
-    @media print {
-
-      .no-print,
-      nav,
-      button,
-      a[href*="create"],
-      a[href*="edit"] {
-        display: none !important;
-      }
-    }
-  </style>
 @endsection

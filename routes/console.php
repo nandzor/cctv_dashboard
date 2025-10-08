@@ -24,6 +24,12 @@ Schedule::call(function () {
     UpdateDailyReportJob::dispatch($yesterday)->onQueue('reports');
 })->dailyAt('01:00')->name('update_daily_reports')->withoutOverlapping();
 
+// Generate counting reports from detections (for daily/monthly reports)
+Schedule::command('reports:generate-counting --days=1')
+    ->dailyAt('01:15')
+    ->name('generate_counting_reports')
+    ->withoutOverlapping();
+
 Schedule::call(function () {
     CleanupOldFilesJob::dispatch(90)->onQueue('maintenance');
 })->dailyAt('02:00')->name('cleanup_old_files')->withoutOverlapping();
