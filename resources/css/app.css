@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
-/* Apply Poppins font globally */
+/* Apply Inter font globally */
 body {
-  font-family: "Poppins", sans-serif;
+  font-family: "Inter", sans-serif;
+  font-feature-settings: "liga" 1, "calt" 1; /* Enable ligatures and contextual alternates */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Alpine.js x-cloak directive */
