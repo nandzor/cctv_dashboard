@@ -1,40 +1,68 @@
 {
   "info": {
     "name": "CCTV Dashboard API",
-    "description": "Complete API collection for CCTV Dashboard with Re-ID Detection",
+    "description": "Complete API collection for CCTV Dashboard with Person Re-ID Detection, API Credential Management, and Rate Limiting",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "1.0.0"
+    "version": "2.0.0",
+    "_postman_id": "cctv-dashboard-api-v2"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "value",
+        "value": "{{api_key}}",
+        "type": "string"
+      },
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      }
+    ]
   },
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:8000/api",
-      "type": "string"
+      "value": "{{base_url}}",
+      "type": "string",
+      "description": "Base API URL (configured in environment)"
     },
     {
       "key": "api_key",
-      "value": "cctv_test_dev_key",
-      "type": "string"
+      "value": "{{api_key}}",
+      "type": "string",
+      "description": "API Key from /api-credentials (admin only)"
     },
     {
       "key": "api_secret",
-      "value": "secret_test_dev_2024",
-      "type": "string"
+      "value": "{{api_secret}}",
+      "type": "string",
+      "description": "API Secret (shown once during creation)"
+    },
+    {
+      "key": "sanctum_token",
+      "value": "",
+      "type": "string",
+      "description": "Sanctum Bearer token (get from login)"
     },
     {
       "key": "test_re_id",
-      "value": "person_test_001",
-      "type": "string"
+      "value": "REID_20251008_0001",
+      "type": "string",
+      "description": "Test Re-ID for person tracking"
     },
     {
       "key": "test_branch_id",
       "value": "1",
-      "type": "string"
+      "type": "string",
+      "description": "Test branch ID"
     },
     {
       "key": "test_device_id",
-      "value": "CAM_JKT001_001",
-      "type": "string"
+      "value": "CAMERA_001",
+      "type": "string",
+      "description": "Test device ID"
     }
   ],
   "item": [
@@ -53,8 +81,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@cctv.com\",\n  \"password\": \"admin123\"\n}"
+              "raw": "{\n  \"email\": \"admin@cctv.com\",\n  \"password\": \"admin123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
+            "description": "Login with admin credentials to get Sanctum token",
             "url": {
               "raw": "{{base_url}}/login",
               "host": ["{{base_url}}"],
@@ -95,28 +129,79 @@
             "header": [
               {
                 "key": "X-API-Key",
-                "value": "{{api_key}}"
+                "value": "{{api_key}}",
+                "type": "text",
+                "description": "API Key from /api-credentials"
               },
               {
                 "key": "X-API-Secret",
-                "value": "{{api_secret}}"
+                "value": "{{api_secret}}",
+                "type": "text",
+                "description": "API Secret (saved during creation)"
               },
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"re_id\": \"{{test_re_id}}\",\n  \"branch_id\": {{test_branch_id}},\n  \"device_id\": \"{{test_device_id}}\",\n  \"detected_count\": 1,\n  \"detection_data\": {\n    \"confidence\": 0.95,\n    \"bounding_box\": {\n      \"x\": 120,\n      \"y\": 150,\n      \"width\": 80,\n      \"height\": 200\n    }\n  }\n}"
+              "raw": "{\n  \"re_id\": \"{{test_re_id}}\",\n  \"branch_id\": {{test_branch_id}},\n  \"device_id\": \"{{test_device_id}}\",\n  \"detected_count\": 1,\n  \"detection_data\": {\n    \"confidence\": 0.95,\n    \"bounding_box\": {\n      \"x\": 120,\n      \"y\": 150,\n      \"width\": 80,\n      \"height\": 200\n    },\n    \"person_features\": {\n      \"clothing_colors\": [\"blue\", \"white\"],\n      \"height\": \"medium\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/detection/log",
               "host": ["{{base_url}}"],
               "path": ["detection", "log"]
             },
-            "description": "Log a new person detection event (async processing)"
-          }
+            "description": "Log a new person detection event (async processing with 202 Accepted response)\n\nRate Limit: 10,000 requests/hour per credential\nGlobal Access: All branches & devices\n\nResponse Headers:\n- X-RateLimit-Limit: 10000\n- X-RateLimit-Remaining: 9847\n- X-RateLimit-Reset: 1728399600"
+          },
+          "response": [
+            {
+              "name": "Success - 202 Accepted",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"re_id\": \"REID_20251008_0001\",\n  \"branch_id\": 1,\n  \"device_id\": \"CAMERA_001\",\n  \"detected_count\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/detection/log",
+                  "host": ["{{base_url}}"],
+                  "path": ["detection", "log"]
+                }
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "X-RateLimit-Limit",
+                  "value": "10000"
+                },
+                {
+                  "key": "X-RateLimit-Remaining",
+                  "value": "9847"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Detection submitted successfully\",\n  \"data\": {\n    \"re_id\": \"REID_20251008_0001\",\n    \"branch_id\": 1,\n    \"device_id\": \"CAMERA_001\",\n    \"status\": \"processing\",\n    \"job_id\": \"uuid-here\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Check Detection Status",
@@ -125,11 +210,18 @@
             "header": [
               {
                 "key": "X-API-Key",
-                "value": "{{api_key}}"
+                "value": "{{api_key}}",
+                "type": "text"
               },
               {
                 "key": "X-API-Secret",
-                "value": "{{api_secret}}"
+                "value": "{{api_secret}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "url": {
@@ -139,10 +231,12 @@
               "variable": [
                 {
                   "key": "jobId",
-                  "value": "job_uuid_here"
+                  "value": "job_uuid_here",
+                  "description": "Job ID from detection/log response"
                 }
               ]
-            }
+            },
+            "description": "Check the processing status of a detection job"
           }
         },
         {
@@ -152,11 +246,18 @@
             "header": [
               {
                 "key": "X-API-Key",
-                "value": "{{api_key}}"
+                "value": "{{api_key}}",
+                "type": "text"
               },
               {
                 "key": "X-API-Secret",
-                "value": "{{api_secret}}"
+                "value": "{{api_secret}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "url": {
@@ -206,11 +307,18 @@
             "header": [
               {
                 "key": "X-API-Key",
-                "value": "{{api_key}}"
+                "value": "{{api_key}}",
+                "type": "text"
               },
               {
                 "key": "X-API-Secret",
-                "value": "{{api_secret}}"
+                "value": "{{api_secret}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "url": {
@@ -235,11 +343,18 @@
             "header": [
               {
                 "key": "X-API-Key",
-                "value": "{{api_key}}"
+                "value": "{{api_key}}",
+                "type": "text"
               },
               {
                 "key": "X-API-Secret",
-                "value": "{{api_secret}}"
+                "value": "{{api_secret}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "url": {
@@ -270,11 +385,18 @@
             "header": [
               {
                 "key": "X-API-Key",
-                "value": "{{api_key}}"
+                "value": "{{api_key}}",
+                "type": "text"
               },
               {
                 "key": "X-API-Secret",
-                "value": "{{api_secret}}"
+                "value": "{{api_secret}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "url": {
@@ -319,11 +441,18 @@
             "header": [
               {
                 "key": "X-API-Key",
-                "value": "{{api_key}}"
+                "value": "{{api_key}}",
+                "type": "text"
               },
               {
                 "key": "X-API-Secret",
-                "value": "{{api_secret}}"
+                "value": "{{api_secret}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "url": {
@@ -386,17 +515,93 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{sanctum_token}}"
+                "value": "Bearer {{sanctum_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "url": {
               "raw": "{{base_url}}/me",
               "host": ["{{base_url}}"],
               "path": ["me"]
-            }
+            },
+            "description": "Get authenticated user information"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sanctum_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": ["{{base_url}}"],
+              "path": ["logout"]
+            },
+            "description": "Logout and invalidate Sanctum token"
           }
         }
       ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request script for all requests",
+          "console.log('Environment: ' + pm.environment.name);",
+          "console.log('Base URL: ' + pm.variables.get('base_url'));"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Test script for all requests",
+          "pm.test('Status code is successful', function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 202]);",
+          "});",
+          "",
+          "// Check rate limit headers (for API Key auth)",
+          "if (pm.request.headers.get('X-API-Key')) {",
+          "    pm.test('Rate limit headers present', function () {",
+          "        pm.expect(pm.response.headers.get('X-RateLimit-Limit')).to.exist;",
+          "        pm.expect(pm.response.headers.get('X-RateLimit-Remaining')).to.exist;",
+          "    });",
+          "    ",
+          "    // Log rate limit info",
+          "    const remaining = pm.response.headers.get('X-RateLimit-Remaining');",
+          "    console.log('Rate Limit Remaining: ' + remaining + '/10000');",
+          "}",
+          "",
+          "// Parse response if JSON",
+          "if (pm.response.headers.get('Content-Type').includes('application/json')) {",
+          "    const jsonData = pm.response.json();",
+          "    pm.test('Response has success field', function () {",
+          "        pm.expect(jsonData).to.have.property('success');",
+          "    });",
+          "}"
+        ]
+      }
     }
   ]
 }
