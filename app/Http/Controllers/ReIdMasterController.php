@@ -23,12 +23,12 @@ class ReIdMasterController extends Controller {
     public function index(Request $request) {
         $search = $request->input('search');
         $perPage = $request->input('per_page', 10);
-        $status = $request->input('status');
+        $branchId = $request->input('branch_id');
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
 
         $filters = [];
-        if ($status) $filters['status'] = $status;
+        if ($branchId) $filters['branch_id'] = $branchId;
 
         // If date range provided, use specialized method
         if ($dateFrom && $dateTo) {
@@ -39,7 +39,7 @@ class ReIdMasterController extends Controller {
             $statistics = $this->reIdMasterService->getStatistics();
         }
 
-        return view('re-id-masters.index', compact('persons', 'statistics', 'search', 'perPage', 'status'));
+        return view('re-id-masters.index', compact('persons', 'statistics', 'search', 'perPage', 'branchId'));
     }
 
     /**
@@ -106,14 +106,17 @@ class ReIdMasterController extends Controller {
      */
     public function export(Request $request) {
         // Build filters using service
-        $filterKeys = ['status', 'date_from', 'date_to'];
+        $filterKeys = ['branch_id', 'date_from', 'date_to'];
         $filters = $this->exportService->buildFilters($request, $filterKeys);
 
-        // Build query
+        // Build query with branch detection relationship
         $query = ReIdMaster::query();
 
-        if (isset($filters['status'])) {
-            $query->where('status', $filters['status']);
+        if (isset($filters['branch_id'])) {
+            // Filter by branch through re_id_branch_detections relationship
+            $query->whereHas('branchDetections', function ($q) use ($filters) {
+                $q->where('branch_id', $filters['branch_id']);
+            });
         }
 
         if (isset($filters['date_from'])) {

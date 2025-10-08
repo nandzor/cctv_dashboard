@@ -46,11 +46,8 @@
         <div class="flex flex-col lg:flex-row lg:items-end gap-4">
           <!-- Filter Fields -->
           <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <x-select name="status" :value="request('status')" label="Status">
-              <option value="">All Status</option>
-              <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
-              <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
-            </x-select>
+            <x-company-branch-select name="branch_id" label="Branch" :value="request('branch_id')"
+              placeholder="All Branches" />
 
             <x-input type="date" name="date_from" :value="request('date_from')" label="From Date" />
 
@@ -87,7 +84,7 @@
 
                 <x-dropdown-link :href="route(
                     're-id-masters.export',
-                    array_merge(request()->only(['status', 'date_from', 'date_to']), [
+                    array_merge(request()->only(['branch_id', 'date_from', 'date_to']), [
                         'format' => 'excel',
                     ]),
                 )" variant="success">
@@ -101,7 +98,7 @@
 
                 <x-dropdown-link :href="route(
                     're-id-masters.export',
-                    array_merge(request()->only(['status', 'date_from', 'date_to']), [
+                    array_merge(request()->only(['branch_id', 'date_from', 'date_to']), [
                         'format' => 'pdf',
                     ]),
                 )" variant="danger">

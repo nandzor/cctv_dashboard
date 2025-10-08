@@ -135,8 +135,14 @@
   @if (!empty($filters))
     <div class="filter-info">
       <strong>Applied Filters:</strong>
-      @if (isset($filters['status']))
-        | Status: <strong>{{ ucfirst($filters['status']) }}</strong>
+      @if (isset($filters['branch_id']))
+        | Branch: <strong>{{ \App\Models\CompanyBranch::find($filters['branch_id'])->branch_name ?? 'N/A' }}</strong>
+      @endif
+      @if (isset($filters['date_from']))
+        | From: <strong>{{ $filters['date_from'] }}</strong>
+      @endif
+      @if (isset($filters['date_to']))
+        | To: <strong>{{ $filters['date_to'] }}</strong>
       @endif
     </div>
   @endif

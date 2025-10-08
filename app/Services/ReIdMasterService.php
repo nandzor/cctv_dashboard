@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ReIdMaster;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 class ReIdMasterService extends BaseService {
@@ -47,6 +48,12 @@ class ReIdMasterService extends BaseService {
 
         if (isset($filters['status'])) {
             $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['branch_id'])) {
+            $query->whereHas('branchDetections', function ($q) use ($filters) {
+                $q->where('branch_id', $filters['branch_id']);
+            });
         }
 
         return $query->orderBy('detection_date', 'desc')
@@ -104,5 +111,32 @@ class ReIdMasterService extends BaseService {
         return $query->orderBy('total_actual_count', 'desc')
             ->limit($limit)
             ->get();
+    }
+
+    /**
+     * Apply filters to query (Override parent to handle branch_id relationship)
+     *
+     * @param Builder $query
+     * @param array $filters
+     * @return Builder
+     */
+    protected function applyFilters(Builder $query, array $filters): Builder
+    {
+        foreach ($filters as $field => $value) {
+            if (!is_null($value) && $value !== '') {
+                // Handle branch_id filter through relationship
+                if ($field === 'branch_id') {
+                    $query->whereHas('branchDetections', function ($q) use ($value) {
+                        $q->where('branch_id', $value);
+                    });
+                } elseif (is_array($value)) {
+                    $query->whereIn($field, $value);
+                } else {
+                    $query->where($field, $value);
+                }
+            }
+        }
+
+        return $query;
     }
 }

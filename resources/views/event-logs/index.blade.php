@@ -36,26 +36,10 @@
       <form method="GET">
         <div class="flex flex-col lg:flex-row lg:items-end gap-4">
           <!-- Filter Fields -->
-          <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <x-select name="event_type" :value="request('event_type')" label="Event Type">
-              <option value="">All Types</option>
-              <option value="detection" {{ request('event_type') === 'detection' ? 'selected' : '' }}>Detection</option>
-              <option value="alert" {{ request('event_type') === 'alert' ? 'selected' : '' }}>Alert</option>
-              <option value="motion" {{ request('event_type') === 'motion' ? 'selected' : '' }}>Motion</option>
-              <option value="manual" {{ request('event_type') === 'manual' ? 'selected' : '' }}>Manual</option>
-            </x-select>
+          <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <x-event-type-select name="event_type" label="Event Type" :value="request('event_type')" placeholder="All Types" />
 
-            <x-select name="branch_id" :value="request('branch_id')" label="Branch">
-              <option value="">All Branches</option>
-              @foreach ($branches as $branch)
-                <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>
-                  {{ $branch->branch_name }}</option>
-              @endforeach
-            </x-select>
-
-            <x-input type="date" name="date_from" :value="request('date_from')" label="From Date" />
-
-            <x-input type="date" name="date_to" :value="request('date_to')" label="To Date" />
+            <x-company-branch-select name="branch_id" label="Branch" :value="request('branch_id')" placeholder="All Branches" />
           </div>
 
           <!-- Action Buttons -->
@@ -88,7 +72,7 @@
 
                 <x-dropdown-link :href="route(
                     'event-logs.export',
-                    array_merge(request()->only(['event_type', 'branch_id', 'date_from', 'date_to']), [
+                    array_merge(request()->only(['event_type', 'branch_id']), [
                         'format' => 'excel',
                     ]),
                 )" variant="success">
@@ -102,7 +86,7 @@
 
                 <x-dropdown-link :href="route(
                     'event-logs.export',
-                    array_merge(request()->only(['event_type', 'branch_id', 'date_from', 'date_to']), [
+                    array_merge(request()->only(['event_type', 'branch_id']), [
                         'format' => 'pdf',
                     ]),
                 )" variant="danger">
