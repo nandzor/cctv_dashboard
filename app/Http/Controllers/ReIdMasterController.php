@@ -42,16 +42,30 @@ class ReIdMasterController extends Controller {
      * Display the specified person with detection history
      */
     public function show(string $reId, Request $request) {
-        $date = $request->input('date', now()->toDateString());
+        // Get all dates this person was detected first
+        $allDetections = $this->reIdMasterService->getAllDetectionsForPerson($reId);
+
+        if ($allDetections->isEmpty()) {
+            abort(404, 'Person not found');
+        }
+
+        // If date not specified, use the latest detection date
+        $date = $request->input('date');
+
+        if (!$date) {
+            $latestDetection = $allDetections->first();
+            $date = \Carbon\Carbon::parse($latestDetection->detection_date)->format('Y-m-d');
+        }
 
         $person = $this->reIdMasterService->getPersonWithDetections($reId, $date);
 
         if (!$person) {
-            abort(404, 'Person not found for the specified date');
+            // If not found for specific date, redirect to latest date
+            $latestDetection = $allDetections->first();
+            $latestDate = \Carbon\Carbon::parse($latestDetection->detection_date)->format('Y-m-d');
+            return redirect()->route('re-id-masters.show', ['reId' => $reId, 'date' => $latestDate]);
         }
 
-        // Get all dates this person was detected
-        $allDetections = $this->reIdMasterService->getAllDetectionsForPerson($reId);
         $hasMultipleDetections = $allDetections->count() > 1;
 
         return view('re-id-masters.show', compact('person', 'allDetections', 'hasMultipleDetections', 'date'));

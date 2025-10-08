@@ -93,7 +93,7 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody class="bg-white divide-y divide-gray-200" x-data="{}">
             @forelse($person->branchDetections as $detection)
               <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 text-sm text-gray-900">
@@ -103,13 +103,20 @@
                 <td class="px-6 py-4 text-sm text-center font-semibold">{{ $detection->detected_count }}</td>
                 <td class="px-6 py-4 text-sm text-gray-500">
                   @if ($detection->detection_data)
-                    <button @click="showJson{{ $detection->id }} = !showJson{{ $detection->id }}"
-                      class="text-blue-600 hover:text-blue-800">View JSON</button>
-                    <div x-data="{ showJson{{ $detection->id }}: false }" x-show="showJson{{ $detection->id }}" x-cloak class="mt-2">
-                      <pre class="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{{ json_encode($detection->detection_data, JSON_PRETTY_PRINT) }}</pre>
+                    <div x-data="{ showJson: false }">
+                      <x-button size="sm" variant="primary" @click="showJson = !showJson">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        <span x-text="showJson ? 'Hide JSON' : 'View JSON'"></span>
+                      </x-button>
+                      <div x-show="showJson" x-cloak x-transition class="mt-3">
+                        <pre class="bg-gray-900 text-green-400 p-4 rounded-lg text-xs overflow-x-auto max-w-full">{{ json_encode($detection->detection_data, JSON_PRETTY_PRINT) }}</pre>
+                      </div>
                     </div>
                   @else
-                    N/A
+                    <span class="text-gray-400 text-xs">No data</span>
                   @endif
                 </td>
               </tr>

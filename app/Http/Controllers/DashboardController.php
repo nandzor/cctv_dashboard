@@ -46,6 +46,25 @@ class DashboardController extends Controller {
         // Re-ID statistics (today)
         $reIdStats = $this->reIdMasterService->getStatistics(['date' => now()->toDateString()]);
 
+        // Today's detections count
+        $todayDetections = ReIdBranchDetection::whereDate('detection_timestamp', now()->toDateString())->count();
+
+        // Yesterday's detections count
+        $yesterdayDetections = ReIdBranchDetection::whereDate('detection_timestamp', now()->subDay()->toDateString())->count();
+
+        // Calculate percentage change
+        $todayDetectionTrend = null;
+        $todayDetectionTrendUp = true;
+
+        if ($yesterdayDetections > 0) {
+            $change = (($todayDetections - $yesterdayDetections) / $yesterdayDetections) * 100;
+            $todayDetectionTrend = number_format(abs($change), 1) . '%';
+            $todayDetectionTrendUp = $change >= 0;
+        } elseif ($todayDetections > 0) {
+            $todayDetectionTrend = 'New';
+            $todayDetectionTrendUp = true;
+        }
+
         // Recent detections (last 10)
         $recentDetections = ReIdBranchDetection::with(['reIdMaster', 'branch', 'device'])
             ->latest('detection_timestamp')
@@ -87,6 +106,9 @@ class DashboardController extends Controller {
             'totalBranches',
             'totalDevices',
             'reIdStats',
+            'todayDetections',
+            'todayDetectionTrend',
+            'todayDetectionTrendUp',
             'recentDetections',
             'hasRecentDetections',
             'detectionTrend',
