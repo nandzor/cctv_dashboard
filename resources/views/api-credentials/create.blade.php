@@ -16,46 +16,63 @@
         <x-input name="credential_name" label="Credential Name" placeholder="e.g., Mobile App API Key" required
           hint="Descriptive name for this credential" />
 
-        <!-- Scope Configuration -->
+        <!-- Scope Configuration (Auto - Disabled) -->
         <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h4 class="text-sm font-semibold text-blue-900 mb-3">Access Scope</h4>
-          <p class="text-xs text-blue-700 mb-4">Leave both empty for global access to all branches and devices</p>
+          <h4 class="text-sm font-semibold text-blue-900 mb-3">Access Scope (Auto-configured)</h4>
 
           <div class="space-y-4">
-            <x-company-branch-select name="branch_id" label="Branch Scope (Optional)" :value="old('branch_id')"
-              placeholder="Global - All Branches" hint="Restrict to specific branch or leave empty for all branches" />
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                Branch Scope
+              </label>
+              <input type="text" value="Global - All Branches" disabled
+                class="block w-full px-3 py-2 text-sm rounded-lg border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed">
+              <p class="text-xs text-gray-600 mt-1">✅ Automatically set to global access (all branches)</p>
+            </div>
 
             <div>
-              <label for="device_id" class="block text-sm font-medium text-gray-700 mb-1.5">
-                Device Scope (Optional)
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                Device Scope
               </label>
-              <select name="device_id" id="device_id"
-                class="block w-full px-3 py-2 text-sm rounded-lg border-gray-300 shadow-sm transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500 focus:ring-opacity-20">
-                <option value="">Global - All Devices</option>
-                @foreach (\App\Models\DeviceMaster::active()->orderBy('device_name')->get() as $device)
-                  <option value="{{ $device->device_id }}" {{ old('device_id') == $device->device_id ? 'selected' : '' }}>
-                    {{ $device->device_name }} ({{ $device->device_id }})
-                  </option>
-                @endforeach
-              </select>
-              <p class="text-sm text-gray-600 mt-1">Restrict to specific device or leave empty for all devices</p>
+              <input type="text" value="Global - All Devices" disabled
+                class="block w-full px-3 py-2 text-sm rounded-lg border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed">
+              <p class="text-xs text-gray-600 mt-1">✅ Automatically set to global access (all devices)</p>
             </div>
           </div>
         </div>
 
-        <!-- Permissions -->
+        <!-- Permissions (Auto - Disabled) -->
         <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-          <h4 class="text-sm font-semibold text-purple-900 mb-3">Permissions</h4>
+          <h4 class="text-sm font-semibold text-purple-900 mb-3">Permissions (Auto-configured)</h4>
           <div class="space-y-3">
-            <x-checkbox name="permissions[read]" label="Read Access" value="1" :checked="true" />
-            <x-checkbox name="permissions[write]" label="Write Access" value="1" :checked="true" />
-            <x-checkbox name="permissions[delete]" label="Delete Access" value="1" :checked="false" />
+            <label class="flex items-center">
+              <input type="checkbox" checked disabled
+                class="rounded border-gray-300 text-purple-600 bg-gray-50 cursor-not-allowed">
+              <span class="ml-2 text-sm text-gray-700">✅ Read Access</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" checked disabled
+                class="rounded border-gray-300 text-purple-600 bg-gray-50 cursor-not-allowed">
+              <span class="ml-2 text-sm text-gray-700">✅ Write Access</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" checked disabled
+                class="rounded border-gray-300 text-purple-600 bg-gray-50 cursor-not-allowed">
+              <span class="ml-2 text-sm text-gray-700">✅ Delete Access</span>
+            </label>
           </div>
+          <p class="text-xs text-gray-600 mt-3">✅ All permissions automatically enabled (full access)</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <x-input type="number" name="rate_limit" label="Rate Limit (per hour)" placeholder="1000" :value="old('rate_limit', 1000)"
-            required hint="Maximum requests per hour" />
+          <div>
+            <label for="rate_limit" class="block text-sm font-medium text-gray-700 mb-1.5">
+              Rate Limit (per hour)
+            </label>
+            <input type="text" id="rate_limit" value="10,000 requests/hour" disabled
+              class="block w-full px-3 py-2 text-sm rounded-lg border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed">
+            <p class="text-xs text-gray-600 mt-1">✅ Automatically set to 10,000 requests per hour</p>
+          </div>
 
           <x-input type="date" name="expires_at" label="Expiration Date (Optional)" :value="old('expires_at')"
             hint="Leave empty for no expiration" />
