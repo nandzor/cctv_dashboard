@@ -3,13 +3,14 @@
 namespace App\Jobs;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Imagick\Driver;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-use Intervention\Image\Facades\Image;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 
 class ProcessDetectionImageJob implements ShouldQueue {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -37,20 +38,18 @@ class ProcessDetectionImageJob implements ShouldQueue {
             $fullPath = Storage::disk('local')->path($this->imagePath);
 
             // Load image
-            $image = Image::make($fullPath);
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($fullPath);
 
             // 1. Resize if larger than 1920x1080
             if ($image->width() > 1920 || $image->height() > 1080) {
-                $image->resize(1920, 1080, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
+                $image->scaleDown(1920, 1080);
             }
 
             // 2. Add watermark (timestamp + branch)
             $watermarkText = now()->format('Y-m-d H:i:s') . ' | Event #' . $this->eventLogId;
             $image->text($watermarkText, 10, $image->height() - 10, function ($font) {
-                $font->file(public_path('fonts/Poppins-Regular.ttf'));
+                $font->filename(public_path('fonts/Poppins-Regular.ttf'));
                 $font->size(14);
                 $font->color('#ffffff');
                 $font->align('left');
@@ -58,13 +57,13 @@ class ProcessDetectionImageJob implements ShouldQueue {
             });
 
             // 3. Optimize quality (85%)
-            $image->save($fullPath, 85);
+            $image->toJpeg(85)->save($fullPath);
 
             // 4. Create thumbnail (320x240)
             $thumbnailPath = str_replace('.', '_thumb.', $this->imagePath);
-            $thumbnail = Image::make($fullPath);
-            $thumbnail->fit(320, 240);
-            $thumbnail->save(Storage::disk('local')->path($thumbnailPath), 75);
+            $thumbnail = $manager->read($fullPath);
+            $thumbnail->cover(320, 240);
+            $thumbnail->toJpeg(75)->save(Storage::disk('local')->path($thumbnailPath));
 
             Log::info('Image processed successfully', [
                 'original' => $this->imagePath,
