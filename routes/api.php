@@ -29,7 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Detection API (API Key authentication)
-Route::middleware(ApiKeyAuth::class)->group(function () {
+Route::middleware('api.key')->group(function () {
     // Detection logging
     Route::post('/detection/log', [DetectionController::class, 'store'])->name('api.detection.store');
     Route::get('/detection/status/{jobId}', [DetectionController::class, 'status'])->name('api.detection.status');

@@ -260,82 +260,113 @@
        │                │◄───────────────┤                │                │
 ```
 
-### **4. API Credential Creation & Usage**
+### **4. API Credential Creation & Usage (Simplified Global Access)**
 
 ```
 ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
 │   Admin     │  │   Blade     │  │  Laravel    │  │  Database   │  │  External   │
-│   User      │  │ Template    │  │ Controller  │  │             │  │   Client    │
+│   User      │  │ Template    │  │ Controller  │  │  + Cache    │  │   Client    │
 └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘
        │                │                │                │                │
        │ 1. Create API Key               │                │                │
-       │ (Branch: Jakarta, Permissions)  │                │                │
+       │ (Simplified: name + expiry only)│                │                │
        ├───────────────►│                │                │                │
        │                │                │                │                │
-       │                │ 2. POST /api/credentials        │                │
-       │                │ Form: {name, branch_id,        │                │
-       │                │  permissions, rate_limit,      │                │
-       │                │  expires_at}                   │                │
+       │                │ 2. POST /api-credentials        │                │
+       │                │ Form: {credential_name,        │                │
+       │                │  expires_at, status}           │                │
+       │                │ (Only 3 fields!)               │                │
        │                ├───────────────────────────────►│                │
        │                │                │                │                │
-       │                │                │ 3. Validate Input               │
-       │                │                │ - Check admin permissions       │
-       │                │                │ - Validate branch access        │
-       │                │                │ - Verify permission format      │
+       │                │                │ 3. Validate & Generate          │
+       │                │                │ - Check admin middleware (routes)│
+       │                │                │ - Generate unique API key (40)  │
+       │                │                │ - Generate API secret (40)      │
+       │                │                │ - Set defaults:                 │
+       │                │                │   • branch_id = NULL (global)   │
+       │                │                │   • device_id = NULL (global)   │
+       │                │                │   • permissions = full          │
+       │                │                │   • rate_limit = 10000/hour     │
        │                │                ├───────────────►│                │
        │                │                │                │                │
-       │                │                │ 4. Generate Credentials         │
-       │                │                │ - Generate unique API key       │
-       │                │                │ - Generate API secret           │
-       │                │                │ - Encrypt secret                │
-       │                │                ├───────────────►│                │
-       │                │                │                │                │
-       │                │                │ 5. Save to Database             │
+       │                │                │ 4. Save to Database             │
        │                │                │ - api_credentials table         │
+       │                │                │ - Store api_secret (plain)      │
        │                │                │ - Set created_by                │
        │                │                ├───────────────►│                │
        │                │                │                │                │
-       │                │                │ 6. Success Response             │
-       │                │                │ {api_key, api_secret, id}       │
+       │                │                │ 5. Flash Session (Secret)       │
+       │                │                │ - Store api_secret in session   │
+       │                │                │ - Show only once!               │
        │                │                │◄───────────────┤                │
        │                │                │                │                │
-       │                │ 7. Render Blade View            │                │
-       │                │ - Display API key (one-time)    │                │
-       │                │ - Display secret (one-time)     │                │
-       │                │ - Alpine.js copy to clipboard   │                │
+       │                │ 6. Redirect to Show Page        │                │
+       │                │ - Display credential details    │                │
+       │                │ - Show secret (one-time alert)  │                │
+       │                │ - Copy to clipboard button      │
+       │                │ - "Test API" button visible     │
+       │                │◄───────────────┤                │                │
+       │                │                │                │                │
+       │ 7. Test API (Optional)          │                │                │
+       │ GET /api-credentials/{id}/test  │                │                │
+       ├───────────────►│                │                │                │
+       │                │                │                │                │
+       │                │ 8. Render Test Interface        │                │
+       │                │ - Select endpoint dropdown      │                │
+       │                │ - Enter API secret field        │                │
+       │                │ - Send test request button      │                │
+       │                │ - Live response display         │                │
        │                │◄───────────────┤                │                │
        │                │                │                │                │
        │                │                │                │                │
-       │                │                │ 8. External API Request         │
-       │                │                │ GET /api/counting/summary       │
-       │                │                │ Headers: X-API-Key: xxx         │
+       │                │                │ 9. External API Request (Live)  │
+       │                │                │ GET /api/detections             │
+       │                │                │ Headers:                        │
+       │                │                │  X-API-Key: cctv_live_abc...    │
+       │                │                │  X-API-Secret: secret_mno...    │
        │                │                ├─────────────────────────────────►│
        │                │                │                │                │
-       │                │                │ 9. Authenticate Request         │
-       │                │                │ - Validate API key              │
-       │                │                │ - Check permissions             │
-       │                │                │ - Verify rate limits            │
+       │                │                │ 10. ApiKeyAuth Middleware       │
+       │                │                │ - Check headers exist           │
+       │                │                │ - Cache.remember credential (5m)│
        │                │                ├───────────────►│                │
        │                │                │                │                │
-                │                │                │ 10. Log Request (File-based)    │
-                │                │                │ - Write to logs/api_requests/YYYY-MM-DD.log │
-                │                │                │ - Update last_used_at           │
-                │                │                ├───────────────►│                │
+       │                │                │ 11. Validate Credential         │
+       │                │                │ - hash_equals(secret) timing-safe│
+       │                │                │ - Check expiration              │
+       │                │                │ - Check rate limit (Cache)      │
+       │                │                ├───────────────►│                │
        │                │                │                │                │
-       │                │                │ 11. Process Request             │
-       │                │                │ - Query counting data           │
+       │                │                │ 12. Increment Rate Counter      │
+       │                │                │ Cache::increment(rate_limit_key)│
+       │                │                ├───────────────►│                │
+       │                │                │                │                │
+       │                │                │ 13. Process Request             │
+       │                │                │ - Query detections data         │
        │                │                │ - Generate response             │
+       │                │                │ - Add rate limit headers        │
        │                │                ├───────────────►│                │
        │                │                │                │                │
-       │                │                │ 12. API Response                │
-       │                │                │ {success: true, data: {...}}    │
+       │                │                │ 14. API Response                │
+       │                │                │ Headers:                        │
+       │                │                │  X-RateLimit-Limit: 10000       │
+       │                │                │  X-RateLimit-Remaining: 9847    │
+       │                │                │  X-RateLimit-Reset: 1728399600  │
+       │                │                │ Body: {success: true, data}     │
        │                │                │◄─────────────────────────────────┤
        │                │                │                │                │
-       │                │                │ 13. Update Usage Stats          │
-       │                │                │ - Increment request count       │
-       │                │                │ - Update response time          │
+       │                │                │ 15. Async Update last_used_at   │
+       │                │                │ dispatch()->afterResponse()     │
        │                │                ├───────────────►│                │
 ```
+
+**Key Changes:**
+
+- ✅ **Simplified**: Only 3 form fields (name, expiry, status)
+- ✅ **Auto-defaults**: Global access, full permissions, 10K rate limit
+- ✅ **Test Interface**: Built-in API testing at `/api-credentials/{id}/test`
+- ✅ **Security**: Timing-safe comparison, request logging
+- ✅ **Performance**: Credential caching, async updates, rate limit headers
 
 ### **5. Report Generation Workflow (Async Queue)**
 
@@ -804,6 +835,9 @@ GET /storage/file?path={encrypted_path}
   - **images**: 2 workers
   - **reports**: 2 workers (includes daily aggregation jobs)
   - **maintenance**: 2 workers
+- **API Credential Caching**: 5-minute cache for credentials reduces DB queries
+- **Rate Limiting**: Cache-based per-credential hourly limits
+- **Async Updates**: `last_used_at` updated after response (non-blocking)
 - **Async Processing**:
   - Detection processing (202 Accepted)
   - WhatsApp notifications (exponential backoff: 30s, 60s, 120s, 300s, 600s)

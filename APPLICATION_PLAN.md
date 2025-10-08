@@ -294,27 +294,50 @@
   - Comparative analysis
   - Performance rankings
 
-### **9. API Management** 🔑
+### **9. API Management** 🔑 (Admin Only)
 
 - **Credential Management**
 
-  - Create API keys
-  - Manage permissions
-  - Monitor usage
-  - Revoke access
+  - Create API keys (web interface)
+  - Global access only (all branches & devices)
+  - Full permissions by default
+  - Set expiration dates (optional)
+  - Revoke/regenerate credentials
+  - Test API with built-in interface
+
+- **API Testing Interface**
+
+  - Live API testing at `/api-credentials/{id}/test`
+  - Select endpoints and send test requests
+  - View response status, headers, and body
+  - Track rate limit usage
+  - Copy cURL commands
+  - Syntax-highlighted JSON responses
 
 - **API Documentation**
 
-  - Endpoint documentation
-  - Authentication guide
-  - Rate limiting info
-  - Sample requests
+  - Complete endpoint documentation
+  - Authentication guide (X-API-Key, X-API-Secret headers)
+  - Rate limiting info (10,000/hour per credential)
+  - Sample requests and responses
+  - Error code reference
 
 - **Usage Analytics**
-  - Request logs
-  - Performance metrics
-  - Error tracking
-  - Usage patterns
+  - Last used timestamp
+  - Rate limit tracking
+  - Performance metrics (via response headers)
+  - Request logging (file-based daily logs)
+  - Aggregated statistics (daily summaries)
+
+**Features:**
+
+- ✅ Simplified credential creation (3 fields only)
+- ✅ Automatic key/secret generation
+- ✅ Timing-safe authentication
+- ✅ Built-in rate limiting (10,000 req/hour)
+- ✅ Web-based testing interface
+- ✅ One-time secret display (security)
+- ✅ Credential caching for performance
 
 ### **10. Reports & Exports** 📄
 
@@ -811,7 +834,7 @@ Report Request → UpdateDailyReportJob Dispatched
 - ✅ Full CRUD on all modules
 - ✅ User management
 - ✅ System settings
-- ✅ API credential management
+- ✅ **API credential management** (create/edit/delete/test credentials)
 - ✅ Company Group Management (create/edit/delete groups)
 - ✅ Branch/device configuration
 - ✅ View all reports and analytics
@@ -829,6 +852,15 @@ Report Request → UpdateDailyReportJob Dispatched
 - All devices
 - All persons (Re-ID)
 - System configuration
+- **API credentials management** (web interface at `/api-credentials`)
+
+**Admin-Only Features:**
+
+- 🔑 Create/manage API credentials
+- 🧪 Test API endpoints with web interface
+- 🌐 All credentials have global access
+- 🔒 View API usage statistics
+- ⚡ Monitor rate limits and performance
 
 ### **2. Operator** (Branch Operator)
 

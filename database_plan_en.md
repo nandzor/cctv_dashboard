@@ -372,45 +372,37 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 ### **3. API Security Tables (3 tables)**
 
-#### **3.1 api_credentials** (API Key Management)
+#### **3.1 api_credentials** (API Key Management - Simplified Global Access)
 
 ```sql
 CREATE TABLE api_credentials (
     id BIGSERIAL PRIMARY KEY,
     credential_name VARCHAR(150) NOT NULL,
     api_key VARCHAR(255) UNIQUE NOT NULL,
-    api_secret VARCHAR(255),
-    branch_id BIGINT,  -- NULL = global access
-    device_id VARCHAR(50),  -- NULL = access to all devices
-    re_id VARCHAR(100),  -- NULL = access to all persons
-    is_active BOOLEAN DEFAULT true,
-    permissions JSONB,  -- ✅ PostgreSQL JSONB: {"read": true, "write": true, "delete": false}
-    rate_limit INTEGER DEFAULT 1000,
+    api_secret VARCHAR(255) NOT NULL,
+    branch_id BIGINT DEFAULT NULL,  -- Always NULL = global access
+    device_id VARCHAR(50) DEFAULT NULL,  -- Always NULL = all devices
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'expired')),
+    permissions JSONB DEFAULT '{"read": true, "write": true, "delete": true}',  -- Always full permissions
+    rate_limit INTEGER DEFAULT 10000,  -- Default 10,000 requests/hour
     last_used_at TIMESTAMP NULL,
     expires_at TIMESTAMP NULL,
     created_by BIGINT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_api_credentials_branch FOREIGN KEY (branch_id)
-        REFERENCES company_branches(id) ON DELETE CASCADE,
-    CONSTRAINT fk_api_credentials_device FOREIGN KEY (device_id)
-        REFERENCES device_masters(device_id) ON DELETE CASCADE,
-    CONSTRAINT fk_api_credentials_re_id FOREIGN KEY (re_id)
-        REFERENCES re_id_masters(re_id) ON DELETE CASCADE,
     CONSTRAINT fk_api_credentials_created_by FOREIGN KEY (created_by)
         REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- PostgreSQL indexes
 CREATE INDEX idx_api_credentials_api_key ON api_credentials(api_key);
-CREATE INDEX idx_api_credentials_branch_id ON api_credentials(branch_id);
-CREATE INDEX idx_api_credentials_device_id ON api_credentials(device_id);
-CREATE INDEX idx_api_credentials_re_id ON api_credentials(re_id);
-CREATE INDEX idx_api_credentials_is_active ON api_credentials(is_active);
+CREATE INDEX idx_api_credentials_status ON api_credentials(status);
 CREATE INDEX idx_api_credentials_expires_at ON api_credentials(expires_at);
+CREATE INDEX idx_api_credentials_last_used_at ON api_credentials(last_used_at);
+CREATE INDEX idx_api_credentials_created_by ON api_credentials(created_by);
 
--- ✅ PostgreSQL GIN index for JSONB permissions
+-- ✅ PostgreSQL GIN index for JSONB permissions (for future flexibility)
 CREATE INDEX idx_api_credentials_permissions ON api_credentials USING GIN (permissions);
 
 -- PostgreSQL trigger for updated_at
@@ -418,14 +410,29 @@ CREATE TRIGGER update_api_credentials_updated_at BEFORE UPDATE ON api_credential
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
 
-**Purpose:** API credential management with device and Re-ID scoping
+**Purpose:** Simplified API credential management with global access only
 **Key Fields:**
 
-- `device_id`: **Device scope** (NULL = all devices)
-- `re_id`: **Re-identification ID scope** (NULL = all persons)
-- `branch_id`: Branch scope (NULL = all branches)
-- `permissions`: JSON permission object
-- `rate_limit`: Requests per hour
+- `credential_name`: Descriptive name (e.g., "Mobile App API Key")
+- `api_key`: Auto-generated 40-character unique key
+- `api_secret`: Auto-generated 40-character secure secret
+- `branch_id`: Always `NULL` (global access to all branches)
+- `device_id`: Always `NULL` (global access to all devices)
+- `status`: `active`, `inactive`, or `expired`
+- `permissions`: Always full permissions `{"read": true, "write": true, "delete": true}`
+- `rate_limit`: Default 10,000 requests/hour
+- `last_used_at`: Tracks last API usage
+- `expires_at`: Optional expiration date
+
+**Simplified Design:**
+
+- ✅ All credentials have global scope (no branch/device restrictions)
+- ✅ Full permissions by default (read, write, delete)
+- ✅ High rate limit (10,000/hour) suitable for production
+- ✅ Managed via web interface (`/api-credentials`) - admin only
+- ✅ Middleware: `api.key` (registered in `bootstrap/app.php`)
+- ✅ Security: Timing-safe secret comparison, request logging
+- ✅ Performance: Credential caching (5 min), async last_used_at updates
 
 #### **3.2 api_usage_summary** (API Usage Summary - Aggregated Data Only)
 
@@ -3347,15 +3354,26 @@ INSERT INTO event_logs VALUES
 (4, 1, 'CAMERA_001', 'person_002_def456', 'alert', 1, '/storage/events/2024/01/16/event_004.jpg', true, true, true, '{"confidence": 0.94, "alert_type": "unauthorized_person"}', '2024-01-16 17:30:00', NOW());
 ```
 
-### **API Credentials**
+### **API Credentials** (Simplified - Global Access Only)
 
 ```sql
 INSERT INTO api_credentials VALUES
-(1, 'Global Admin API Key', 'cctv_live_abc123xyz789def456', 'secret_ghi789jkl012mno345', NULL, NULL, NULL, true, '{"read": true, "write": true, "delete": true}', 5000, '2024-01-16 15:30:00', NULL, 1, NOW(), NOW()),
-(2, 'Branch Jakarta API Key', 'cctv_live_jkt001branch', 'secret_jkt001secret', 1, NULL, NULL, true, '{"read": true, "write": true, "delete": false}', 1000, '2024-01-16 14:20:00', '2025-12-31 23:59:59', 1, NOW(), NOW()),
-(3, 'Device Specific Key', 'cctv_live_dev001camera', 'secret_dev001secret', NULL, 'CAMERA_001', NULL, true, '{"read": true, "write": false, "delete": false}', 500, '2024-01-16 13:10:00', '2024-12-31 23:59:59', 1, NOW(), NOW()),
-(4, 'Person Tracking Key', 'cctv_live_person001', 'secret_person001', NULL, NULL, 'person_001_abc123', true, '{"read": true, "write": false, "delete": false}', 300, '2024-01-16 12:00:00', '2024-12-31 23:59:59', 1, NOW(), NOW());
+-- All credentials have global access (branch_id=NULL, device_id=NULL)
+(1, 'Mobile App API Key', 'cctv_live_abc123xyz789def456ghi789jkl012', 'secret_mno345pqr678stu901vwx234yz567ab', NULL, NULL, 'active', '{"read": true, "write": true, "delete": true}', 10000, '2024-01-16 15:30:00', NULL, 1, NOW(), NOW()),
+(2, 'Web Dashboard API', 'cctv_live_web001dashboard234567890abcdef', 'secret_web001xyz123abc456def789ghi012jk', NULL, NULL, 'active', '{"read": true, "write": true, "delete": true}', 10000, '2024-01-16 14:20:00', '2025-12-31 23:59:59', 1, NOW(), NOW()),
+(3, 'External Integration', 'cctv_live_ext001integration789abcdef12', 'secret_ext001mno345pqr678stu901vwx234', NULL, NULL, 'active', '{"read": true, "write": true, "delete": true}', 10000, '2024-01-16 13:10:00', '2024-12-31 23:59:59', 1, NOW(), NOW()),
+(4, 'Testing API Key', 'cctv_live_test001api456def789ghi012jklm', 'secret_test001yz567abc890def123ghi456jk', NULL, NULL, 'inactive', '{"read": true, "write": true, "delete": true}', 10000, NULL, '2024-12-31 23:59:59', 1, NOW(), NOW());
 ```
+
+**Notes:**
+
+- ✅ All credentials have **global access** (NULL branch_id, NULL device_id)
+- ✅ All credentials have **full permissions** (read, write, delete)
+- ✅ Default **rate limit**: 10,000 requests/hour
+- ✅ Managed via web interface at `/api-credentials` (admin only)
+- ✅ API secret shown **only once** after creation (must be saved!)
+- ✅ Middleware `api.key` handles authentication and rate limiting
+- ✅ Test interface available at `/api-credentials/{id}/test`
 
 ### **CCTV Streams**
 
@@ -6522,7 +6540,7 @@ fetch("/api/detection/log", {
 
 #### **2. API Key Authentication (For External Systems)**
 
-**Middleware:**
+**Middleware:** `ApiKeyAuth` (Enhanced with Rate Limiting & Security)
 
 ```php
 // app/Http/Middleware/ApiKeyAuth.php
@@ -6531,6 +6549,9 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use App\Models\ApiCredential;
+use App\Helpers\ApiResponseHelper;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class ApiKeyAuth
 {
@@ -6540,32 +6561,85 @@ class ApiKeyAuth
         $apiSecret = $request->header('X-API-Secret');
 
         if (!$apiKey || !$apiSecret) {
-            return response()->json(['message' => 'API credentials required'], 401);
+            return ApiResponseHelper::unauthorized('API key and secret are required');
         }
 
-        $credential = ApiCredential::where('api_key', $apiKey)
-                                   ->where('api_secret', $apiSecret)
-                                   ->where('is_active', true)
-                                   ->first();
+        // Cache credentials for 5 minutes (performance)
+        $credential = Cache::remember("api_credential:{$apiKey}", 300, function () use ($apiKey) {
+            return ApiCredential::where('api_key', $apiKey)
+                ->where('status', 'active')
+                ->first();
+        });
 
         if (!$credential) {
-            return response()->json(['message' => 'Invalid API credentials'], 401);
+            Log::warning('Invalid API key attempt', ['api_key' => $apiKey, 'ip' => $request->ip()]);
+            return ApiResponseHelper::error('Invalid API credentials', 'INVALID_CREDENTIALS', null, 401);
+        }
+
+        // Timing-safe secret comparison (prevents timing attacks)
+        if (!hash_equals($credential->api_secret, $apiSecret)) {
+            Log::warning('Invalid API secret attempt', ['api_key' => $apiKey, 'ip' => $request->ip()]);
+            return ApiResponseHelper::error('Invalid API credentials', 'INVALID_CREDENTIALS', null, 401);
         }
 
         // Check expiration
-        if ($credential->expires_at && $credential->expires_at < now()) {
-            return response()->json(['message' => 'API credentials expired'], 401);
+        if ($credential->isExpired()) {
+            return ApiResponseHelper::error('API credentials expired', 'EXPIRED_CREDENTIALS', null, 401);
         }
 
-        // Update last used
-        $credential->update(['last_used_at' => now()]);
+        // Rate limiting (per credential, hourly)
+        $rateLimitKey = "api_rate_limit:{$credential->api_key}";
+        $hourlyRequests = Cache::get($rateLimitKey, 0);
 
-        // Add credential to request
+        if ($hourlyRequests >= $credential->rate_limit) {
+            return ApiResponseHelper::error(
+                'Rate limit exceeded. Try again later.',
+                'RATE_LIMIT_EXCEEDED',
+                [
+                    'limit' => $credential->rate_limit,
+                    'period' => 'hour',
+                    'reset_at' => now()->startOfHour()->addHour()->toIso8601String(),
+                ],
+                429
+            );
+        }
+
+        // Increment rate limit counter
+        if ($hourlyRequests === 0) {
+            Cache::put($rateLimitKey, 1, now()->endOfHour());
+        } else {
+            Cache::increment($rateLimitKey);
+        }
+
+        // Update last_used_at (async, after response)
+        dispatch(function () use ($credential) {
+            $credential->update(['last_used_at' => now()]);
+        })->afterResponse();
+
+        // Attach credential to request
         $request->merge(['api_credential' => $credential]);
 
-        return $next($request);
+        // Add rate limit headers to response
+        $response = $next($request);
+        $response->headers->set('X-RateLimit-Limit', $credential->rate_limit);
+        $response->headers->set('X-RateLimit-Remaining', max(0, $credential->rate_limit - $hourlyRequests - 1));
+        $response->headers->set('X-RateLimit-Reset', now()->startOfHour()->addHour()->timestamp);
+
+        return $response;
     }
 }
+```
+
+**Registration:**
+
+```php
+// bootstrap/app.php
+$middleware->alias([
+    'auth.sanctum' => \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+    'static.token' => \App\Http\Middleware\ValidateStaticToken::class,
+    'admin' => \App\Http\Middleware\AdminOnly::class,
+    'api.key' => \App\Http\Middleware\ApiKeyAuth::class,  // ✅ Registered
+]);
 ```
 
 **Usage:**
@@ -6573,17 +6647,49 @@ class ApiKeyAuth
 ```php
 // routes/api.php
 Route::middleware('api.key')->group(function () {
-    Route::post('/detection/log', [DetectionController::class, 'log']);
-    Route::get('/person/{re_id}', [PersonController::class, 'show']);
-});
+    // Detection API routes
+    Route::post('/detection/log', [DetectionController::class, 'store']);
+    Route::get('/detection/status/{jobId}', [DetectionController::class, 'status']);
+    Route::get('/detections', [DetectionController::class, 'index']);
+    Route::get('/detection/summary', [DetectionController::class, 'summary']);
 
-// Client usage
-curl -X POST https://api.cctv.com/api/detection/log \
-  -H "X-API-Key: cctv_live_abc123xyz789def456" \
-  -H "X-API-Secret: secret_ghi789jkl012mno345" \
-  -H "Content-Type: application/json" \
-  -d '{"re_id": "person_001_abc123", "branch_id": 1, "device_id": "CAMERA_001"}'
+    // Person (Re-ID) API routes
+    Route::get('/person/{reId}', [DetectionController::class, 'showPerson']);
+    Route::get('/person/{reId}/detections', [DetectionController::class, 'personDetections']);
+
+    // Branch API routes
+    Route::get('/branch/{branchId}/detections', [DetectionController::class, 'branchDetections']);
+});
 ```
+
+**Client Usage:**
+
+```bash
+# Example API request
+curl -X POST https://api.cctv.com/api/detection/log \
+  -H "X-API-Key: cctv_live_abc123xyz789def456ghi789jkl012" \
+  -H "X-API-Secret: secret_mno345pqr678stu901vwx234yz567ab" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "re_id": "person_001_abc123",
+    "branch_id": 1,
+    "device_id": "CAMERA_001",
+    "detected_count": 1,
+    "detection_data": {
+      "confidence": 0.95
+    }
+  }'
+```
+
+**Security Features:**
+
+- ✅ **Timing-safe comparison**: `hash_equals()` prevents timing attacks
+- ✅ **Request logging**: Failed attempts logged with IP address
+- ✅ **Credential caching**: 5-minute cache reduces DB queries
+- ✅ **Rate limiting**: Per-credential hourly limits with Cache
+- ✅ **Async updates**: `last_used_at` updated after response (non-blocking)
+- ✅ **Rate limit headers**: Client can track remaining quota
 
 #### **3. Rate Limiting (BEST PRACTICE)**
 

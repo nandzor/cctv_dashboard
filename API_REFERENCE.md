@@ -9,19 +9,41 @@ Development: http://localhost:8000/api
 
 ## 🔐 Authentication Methods
 
-### 1. Static Token Authentication
+### 1. API Key Authentication (Primary - Recommended)
 
-For system-to-system communication.
+For external device/system integration. **All credentials have global access** to all branches and devices.
 
-**Header:**
+**Managed via:** `/api-credentials` (Admin only web interface)
+
+**Headers:**
 
 ```
-Authorization: Bearer your-static-token
+X-API-Key: your-api-key
+X-API-Secret: your-api-secret
+Accept: application/json
 ```
+
+**Features:**
+
+- 🌐 **Global Scope**: Access to all branches & devices (no restrictions)
+- 🔑 **Full Permissions**: Read, write, and delete operations
+- ⚡ **High Rate Limit**: 10,000 requests/hour per credential
+- 🔒 **Security**: Timing-safe secret verification (`hash_equals`)
+- 📊 **Rate Limit Headers**: Track remaining quota in response
+- 🧪 **Test Interface**: Built-in API testing at `/api-credentials/{id}/test`
+- ⚡ **Performance**: 5-minute credential caching, async updates
+
+**Quick Start:**
+
+1. Admin creates credential at `/api-credentials/create`
+2. Enter name and optional expiration (only 3 fields!)
+3. **Save the API secret** (shown only once!)
+4. Test API at `/api-credentials/{id}/test`
+5. Use in external applications with headers above
 
 ### 2. Sanctum Token Authentication
 
-For user-based API access.
+For user-based API access (web dashboard, mobile apps).
 
 **Header:**
 
@@ -29,15 +51,14 @@ For user-based API access.
 Authorization: Bearer user-generated-token
 ```
 
-### 3. API Key Authentication
+### 3. Static Token Authentication
 
-For external device/system integration.
+For legacy system-to-system communication.
 
-**Headers:**
+**Header:**
 
 ```
-X-API-Key: your-api-key
-X-API-Secret: your-api-secret
+Authorization: Bearer your-static-token
 ```
 
 ---
@@ -721,63 +742,62 @@ Authorization: Bearer api-key
 
 ---
 
-### 🔑 API Credential Management
+### 🔑 API Credential Management (Admin Only - Web Interface)
 
-#### Create API Credential
+API Credentials are managed through web interface at `/api-credentials` (admin only).
 
-```http
-POST /api/credentials/create
-Authorization: Bearer admin-token
-Content-Type: application/json
-```
+#### Create API Credential (Web Form)
 
-**Request:**
+**Access:** `/api-credentials/create` (Admin role required)
+
+**Form Fields:**
 
 ```json
 {
-  "credential_name": "Branch Jakarta API Key",
-  "branch_id": 1,
-  "device_id": null,
-  "permissions": {
-    "read": true,
-    "write": true,
-    "delete": false
-  },
-  "rate_limit": 1000,
-  "expires_at": "2025-12-31T23:59:59Z"
+  "credential_name": "Mobile App API Key",
+  "expires_at": "2025-12-31", // Optional
+  "status": "active"
 }
 ```
 
-**Response:**
+**Auto-Generated:**
 
-```json
-{
-  "success": true,
-  "message": "API credential created successfully",
-  "data": {
-    "id": 2,
-    "credential_name": "Branch Jakarta API Key",
-    "api_key": "cctv_live_jkt001branch",
-    "api_secret": "secret_jkt001secret",
-    "branch_id": 1,
-    "permissions": {
-      "read": true,
-      "write": true,
-      "delete": false
-    },
-    "rate_limit": 1000,
-    "expires_at": "2025-12-31T23:59:59Z"
-  },
-  "meta": {
-    "timestamp": "2024-01-16T14:30:00Z",
-    "version": "1.0",
-    "request_id": "uuid-here",
-    "query_count": 5,
-    "memory_usage": "2.3 MB",
-    "execution_time": "0.112s"
-  }
-}
-```
+- `api_key`: Unique 40-character key (e.g., `cctv_live_abc123xyz789...`)
+- `api_secret`: Secure 40-character secret (shown once!)
+- `branch_id`: `null` (Global access)
+- `device_id`: `null` (Global access)
+- `permissions`: `{"read": true, "write": true, "delete": true}` (Full access)
+- `rate_limit`: `10000` (10,000 requests/hour)
+
+**Response After Creation:**
+
+- Redirects to credential details page
+- Shows `api_secret` **once** in session (must be saved!)
+- Provides "Test API" interface
+- Displays credential information
+
+#### Test API Credential
+
+**Access:** `/api-credentials/{id}/test` (Admin only)
+
+**Features:**
+
+- 🧪 Live API testing with web interface
+- 📊 Response display (status, headers, body)
+- ⏱️ Response time measurement
+- 🔢 Rate limit tracking
+- 📋 Copy cURL commands
+- 🎨 Syntax-highlighted JSON responses
+
+#### API Credential Properties
+
+All credentials have:
+
+- 🌐 **Global Scope**: Access to all branches and devices
+- 🔑 **Full Permissions**: Read, write, and delete operations
+- ⚡ **High Rate Limit**: 10,000 requests per hour
+- 🔒 **Secure**: Timing-safe secret comparison
+- 📊 **Monitored**: Last used timestamp and usage tracking
 
 ---
 
@@ -805,21 +825,31 @@ Content-Type: application/json
 
 ## 📈 Rate Limiting
 
-| Endpoint Type            | Rate Limit              | Window   |
-| ------------------------ | ----------------------- | -------- |
-| **Authentication**       | 5 requests              | 1 minute |
-| **Detection Logging**    | 100 requests            | 1 minute |
-| **User Management**      | 60 requests             | 1 minute |
-| **Static Token**         | 100 requests            | 1 minute |
-| **API Credential Based** | Custom (per credential) | 1 hour   |
+| Endpoint Type            | Rate Limit              | Window   | Implementation        |
+| ------------------------ | ----------------------- | -------- | --------------------- |
+| **Authentication**       | 5 requests              | 1 minute | Sanctum throttle      |
+| **Detection Logging**    | Per credential (10,000) | 1 hour   | ApiKeyAuth middleware |
+| **User Management**      | 60 requests             | 1 minute | Sanctum throttle      |
+| **Static Token**         | 100 requests            | 1 minute | ValidateStaticToken   |
+| **API Credential Based** | 10,000 requests         | 1 hour   | Cache-based tracking  |
 
 **Rate Limit Headers:**
 
+All API responses protected by `api.key` middleware include:
+
 ```
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 95
-X-RateLimit-Reset: 1705394400
+X-RateLimit-Limit: 10000
+X-RateLimit-Remaining: 9847
+X-RateLimit-Reset: 1728399600
 ```
+
+**Rate Limit Features:**
+
+- ✅ Per-credential tracking using Laravel Cache
+- ✅ Hourly reset (automatic at start of each hour)
+- ✅ 429 status with retry-after information
+- ✅ Headers show remaining quota
+- ✅ Credential caching (5 minutes) for performance
 
 **Performance Headers:**
 

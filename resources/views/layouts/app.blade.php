@@ -144,6 +144,17 @@
           <x-sidebar-icon :icon="'<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\' />'" />
           Monthly Reports
         </x-sidebar-link>
+
+        @if (auth()->user()->isAdmin())
+          <!-- Admin Section -->
+          <x-sidebar-section title="Admin" />
+
+          <!-- API Credentials -->
+          <x-sidebar-link :href="route('api-credentials.index')" :active="request()->routeIs('api-credentials.*')">
+            <x-sidebar-icon :icon="'<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z\' />'" />
+            API Credentials
+          </x-sidebar-link>
+        @endif
       </nav>
 
       <div class="absolute bottom-0 w-64 px-4 py-4 border-t border-gray-800">

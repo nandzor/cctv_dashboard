@@ -11,6 +11,7 @@ use App\Http\Controllers\CctvLayoutController;
 use App\Http\Controllers\CctvLiveStreamController;
 use App\Http\Controllers\EventLogController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ApiCredentialController;
 use Illuminate\Support\Facades\Route;
 
 // Guest routes
@@ -71,5 +72,9 @@ Route::middleware('auth')->group(function () {
 
         // CCTV Layout Management (Admin only)
         Route::resource('cctv-layouts', CctvLayoutController::class);
+
+        // API Credentials Management (Admin only)
+        Route::get('api-credentials/{apiCredential}/test', [ApiCredentialController::class, 'test'])->name('api-credentials.test');
+        Route::resource('api-credentials', ApiCredentialController::class);
     });
 });
