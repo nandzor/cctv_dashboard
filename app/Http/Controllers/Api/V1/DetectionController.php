@@ -31,7 +31,7 @@ class DetectionController extends Controller {
                 $imageResult = StorageHelper::store(
                     $request->file('image'),
                     'local',
-                    'events/' . now()->format('Y/m/d'),
+                    'whatsapp_detection_' . now()->format('d-m-Y'),
                     [
                         'related_table' => 'event_logs',
                         'uploaded_by' => null, // API upload
