@@ -27,12 +27,29 @@ class ReportController extends Controller {
         $uniqueBranches = $query->distinct('branch_id')->count('branch_id');
         $uniqueDevices = $query->distinct('device_id')->count('device_id');
 
-        // Daily trend
-        $dailyTrend = ReIdBranchDetection::selectRaw('DATE(detection_timestamp) as date, COUNT(*) as count')
-            ->whereBetween('detection_timestamp', [$dateFrom, $dateTo])
+        // Daily trend - Fill all days in range
+        $detectionData = ReIdBranchDetection::selectRaw('DATE(detection_timestamp) as date, COUNT(*) as count')
+            ->whereBetween('detection_timestamp', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
+            ->when($branchId, function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            })
             ->groupBy('date')
             ->orderBy('date')
-            ->get();
+            ->get()
+            ->keyBy('date');
+
+        // Fill all days in range (including days with 0 detections)
+        $dailyTrend = collect();
+        $startDate = \Carbon\Carbon::parse($dateFrom);
+        $endDate = \Carbon\Carbon::parse($dateTo);
+
+        for ($date = $startDate->copy(); $date <= $endDate; $date->addDay()) {
+            $dateStr = $date->format('Y-m-d');
+            $dailyTrend->push((object)[
+                'date' => $dateStr,
+                'count' => $detectionData->get($dateStr)->count ?? 0
+            ]);
+        }
 
         $maxDailyCount = $dailyTrend->max('count') ?: 1;
 
@@ -105,9 +122,11 @@ class ReportController extends Controller {
 
         // Additional calculations for view
         $groupedReports = $reports->groupBy('branch_id');
-        $totalDevices = $reports->unique('branch_id')->sum(function ($r) { return $r->total_devices; });
+        $totalDevices = $reports->unique('branch_id')->sum(function ($r) {
+            return $r->total_devices;
+        });
         $avgDetectionsPerDay = $monthlyStats['total_detections'] / max($reports->count(), 1);
-        
+
         // Branch statistics
         $branchStats = $reports->groupBy('branch_id')->map(function ($items) {
             return [
@@ -118,14 +137,14 @@ class ReportController extends Controller {
                 'avg_per_day' => $items->avg('total_detections'),
             ];
         });
-        
+
         $maxBranchDetections = $branchStats->max('total_detections') ?: 1;
 
         return view('reports.monthly', compact(
-            'reports', 
-            'branches', 
-            'month', 
-            'branchId', 
+            'reports',
+            'branches',
+            'month',
+            'branchId',
             'monthlyStats',
             'groupedReports',
             'totalDevices',

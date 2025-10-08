@@ -39,8 +39,8 @@
       <x-stat-card title="Today's Detections" :value="$reIdStats['total_records']" color="orange" :icon="'<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M15 12a3 3 0 11-6 0 3 3 0 016 0z\'/><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z\'/>'" />
     </div>
 
-    <!-- Re-ID Statistics -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Re-ID Statistics & Detection Trend -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       <x-card title="Person Detection Stats (Today)">
         <div class="space-y-4">
           <div class="flex justify-between items-center">
@@ -66,60 +66,7 @@
         </div>
       </x-card>
 
-      <x-card title="Detection Trend (Last 7 Days)" class="lg:col-span-2">
-        @if ($detectionTrend->isEmpty())
-          <div class="h-64 flex flex-col items-center justify-center text-gray-400">
-            <svg class="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <p class="font-medium">No detection data available</p>
-            <p class="text-sm mt-1">Run the seeders to generate sample data</p>
-          </div>
-        @else
-          <div class="h-64 flex items-end justify-between gap-1 px-2">
-            @php
-              $maxCount = $maxDetectionCount > 0 ? $maxDetectionCount : 1;
-            @endphp
-            @foreach ($detectionTrend as $trend)
-              @php
-                $percentage = $maxCount > 0 ? ($trend->count / $maxCount) * 100 : 0;
-                $barHeight = $trend->count > 0 ? max(8, $percentage) : 2; // Min 8% if has data, 2% if zero
-              @endphp
-              <div class="flex-1 flex flex-col items-center group">
-                <div class="w-full flex flex-col items-center justify-end" style="height: 200px;">
-                  @if ($trend->count > 0)
-                    <div
-                      class="w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t hover:from-blue-700 hover:to-blue-500 transition-all duration-200 cursor-pointer shadow-sm group-hover:shadow-md relative"
-                      style="height: {{ $barHeight }}%;"
-                      title="{{ $trend->count }} detections on {{ \Carbon\Carbon::parse($trend->date)->format('M d, Y') }}">
-                      <span
-                        class="absolute -top-5 left-1/2 transform -translate-x-1/2 text-xs font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {{ $trend->count }}
-                      </span>
-                    </div>
-                  @else
-                    <div class="w-full bg-gray-200 rounded-t" style="height: 4px;"
-                      title="No detections on {{ \Carbon\Carbon::parse($trend->date)->format('M d, Y') }}">
-                    </div>
-                  @endif
-                </div>
-                <div class="mt-2 text-center">
-                  <span class="block text-xs text-gray-500 font-medium">
-                    {{ \Carbon\Carbon::parse($trend->date)->format('D') }}
-                  </span>
-                  <span class="block text-xs text-gray-600 font-semibold">
-                    {{ \Carbon\Carbon::parse($trend->date)->format('M d') }}
-                  </span>
-                  <span class="block text-sm font-bold {{ $trend->count > 0 ? 'text-blue-600' : 'text-gray-400' }} mt-1">
-                    {{ $trend->count }}
-                  </span>
-                </div>
-              </div>
-            @endforeach
-          </div>
-        @endif
-      </x-card>
+      <x-detection-trend-chart :data="$detectionTrend" title="Detection Trend (Last 7 Days)" />
     </div>
 
     <!-- Recent Detections & Events -->
