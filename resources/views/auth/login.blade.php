@@ -14,7 +14,7 @@
       <p class="text-sm font-medium text-blue-900 mb-2">Demo Credentials:</p>
       <div class="flex items-center justify-between text-sm text-blue-800">
         <div>
-          <p class="font-mono">admin@example.com / admin123</p>
+          <p class="font-mono">admin@cctv.com / admin123</p>
         </div>
         <button type="button" onclick="fillDemoCredentials()"
           class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
@@ -68,7 +68,7 @@
 
   <script>
     function fillDemoCredentials() {
-      document.getElementById('email').value = 'admin@example.com';
+      document.getElementById('email').value = 'admin@cctv.com';
       document.getElementById('password').value = 'admin123';
 
       // Show notification
