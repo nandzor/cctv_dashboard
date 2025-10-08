@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\CountingReport;
 use App\Models\CompanyBranch;
 use App\Models\ReIdBranchDetection;
+use App\Exports\DailyReportsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller {
     public function __construct() {
@@ -94,6 +97,31 @@ class ReportController extends Controller {
         $branches = CompanyBranch::active()->get();
 
         return view('reports.daily', compact('reports', 'branches', 'date', 'branchId'));
+    }
+
+    public function exportDaily(Request $request) {
+        $date = $request->input('date', now()->toDateString());
+        $branchId = $request->input('branch_id');
+        $format = $request->input('format', 'excel'); // excel or pdf
+
+        $query = CountingReport::where('report_type', 'daily')
+            ->where('report_date', $date);
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $reports = $query->with('branch')->get();
+        $dateFormatted = \Carbon\Carbon::parse($date)->format('Y-m-d');
+        $fileName = 'Daily_Report_' . $dateFormatted;
+
+        if ($format === 'pdf') {
+            $pdf = Pdf::loadView('reports.daily-pdf', compact('reports', 'date', 'branchId'));
+            return $pdf->download($fileName . '.pdf');
+        }
+
+        // Default: Excel
+        return Excel::download(new DailyReportsExport($reports, $date), $fileName . '.xlsx');
     }
 
     public function monthly(Request $request) {

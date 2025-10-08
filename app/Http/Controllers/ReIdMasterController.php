@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\ReIdMaster;
 use App\Services\ReIdMasterService;
+use App\Services\BaseExportService;
+use App\Exports\ReIdMastersExport;
 use Illuminate\Http\Request;
 
 class ReIdMasterController extends Controller {
     protected $reIdMasterService;
+    protected $exportService;
 
-    public function __construct(ReIdMasterService $reIdMasterService) {
+    public function __construct(ReIdMasterService $reIdMasterService, BaseExportService $exportService) {
         $this->reIdMasterService = $reIdMasterService;
+        $this->exportService = $exportService;
     }
 
     /**
@@ -95,5 +99,44 @@ class ReIdMasterController extends Controller {
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to update: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Export persons data
+     */
+    public function export(Request $request) {
+        // Build filters using service
+        $filterKeys = ['status', 'date_from', 'date_to'];
+        $filters = $this->exportService->buildFilters($request, $filterKeys);
+
+        // Build query
+        $query = ReIdMaster::query();
+
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['date_from'])) {
+            $query->where('detection_date', '>=', $filters['date_from']);
+        }
+
+        if (isset($filters['date_to'])) {
+            $query->where('detection_date', '<=', $filters['date_to']);
+        }
+
+        $persons = $query->orderBy('detection_date', 'desc')->get();
+        $format = $request->input('format', 'excel');
+
+        // Generate filename using service
+        $fileName = $this->exportService->generateFileName('Person_Tracking');
+
+        // Export using service
+        return $this->exportService->export(
+            $format,
+            new ReIdMastersExport($persons, $filters),
+            're-id-masters.export-pdf',
+            compact('persons', 'filters'),
+            $fileName
+        );
     }
 }

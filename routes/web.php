@@ -43,11 +43,13 @@ Route::middleware('auth')->group(function () {
 
     // Person (Re-ID) Management
     Route::get('/re-id-masters', [ReIdMasterController::class, 'index'])->name('re-id-masters.index');
+    Route::get('/re-id-masters/export/download', [ReIdMasterController::class, 'export'])->name('re-id-masters.export');
     Route::get('/re-id-masters/{reId}', [ReIdMasterController::class, 'show'])->name('re-id-masters.show');
     Route::patch('/re-id-masters/{reId}', [ReIdMasterController::class, 'update'])->name('re-id-masters.update');
 
     // Event Logs (Read-only)
     Route::get('/event-logs', [EventLogController::class, 'index'])->name('event-logs.index');
+    Route::get('/event-logs/export/download', [EventLogController::class, 'export'])->name('event-logs.export');
     Route::get('/event-logs/{eventLog}', [EventLogController::class, 'show'])->name('event-logs.show');
 
     // CCTV Live Stream
@@ -62,6 +64,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/dashboard', [ReportController::class, 'dashboard'])->name('dashboard');
         Route::get('/daily', [ReportController::class, 'daily'])->name('daily');
+        Route::get('/daily/export', [ReportController::class, 'exportDaily'])->name('daily.export');
         Route::get('/monthly', [ReportController::class, 'monthly'])->name('monthly');
     });
 
