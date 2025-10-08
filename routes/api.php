@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public authentication routes (no versioning)
 Route::post('/register', [\App\Http\Controllers\Api\V1\AuthController::class, 'register'])->name('register');
-Route::post('/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login'])->name('login');
+Route::post('/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login'])->name('api.login');
 
 // Sanctum protected routes (no versioning)
 Route::middleware('auth:sanctum')->group(function () {

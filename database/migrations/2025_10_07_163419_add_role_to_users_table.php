@@ -28,8 +28,17 @@ return new class extends Migration {
      */
     public function down(): void {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropIndex(['role']);
-            $table->dropColumn('role');
+            // Check if role column exists before trying to drop column
+            if (Schema::hasColumn('users', 'role')) {
+                // Drop CHECK constraint if it exists (PostgreSQL)
+                try {
+                    DB::statement("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check");
+                } catch (\Exception $e) {
+                    // Constraint might not exist, continue
+                }
+
+                $table->dropColumn('role');
+            }
         });
     }
 };
