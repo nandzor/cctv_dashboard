@@ -1,47 +1,36 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\DetectionController;
-use App\Http\Middleware\ApiKeyAuth;
 use Illuminate\Support\Facades\Route;
 
-// Public API routes
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| CCTV Dashboard API with versioning support
+| Current version: v1 (latest)
+|
+*/
 
-// Protected API routes
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me', [AuthController::class, 'me']);
-
-    // User CRUD API (without names to avoid conflict with web routes)
-    Route::apiResource('users', UserController::class)->names([
-        'index' => 'api.users.index',
-        'store' => 'api.users.store',
-        'show' => 'api.users.show',
-        'update' => 'api.users.update',
-        'destroy' => 'api.users.destroy',
-    ]);
-
-    // Additional user endpoints
-    Route::get('/users/pagination/options', [UserController::class, 'paginationOptions'])->name('api.users.pagination.options');
+// API Version 1 (Current - Latest)
+Route::prefix('v1')->group(function () {
+    require __DIR__ . '/api_v1.php';
 });
 
-// Detection API (API Key authentication)
-Route::middleware('api.key')->group(function () {
-    // Detection logging
-    Route::post('/detection/log', [DetectionController::class, 'store'])->name('api.detection.store');
-    Route::get('/detection/status/{jobId}', [DetectionController::class, 'status'])->name('api.detection.status');
-
-    // Detection queries
-    Route::get('/detections', [DetectionController::class, 'index'])->name('api.detections.index');
-    Route::get('/detection/summary', [DetectionController::class, 'summary'])->name('api.detection.summary');
-
-    // Person (Re-ID) queries
-    Route::get('/person/{reId}', [DetectionController::class, 'showPerson'])->name('api.person.show');
-    Route::get('/person/{reId}/detections', [DetectionController::class, 'personDetections'])->name('api.person.detections');
-
-    // Branch detections
-    Route::get('/branch/{branchId}/detections', [DetectionController::class, 'branchDetections'])->name('api.branch.detections');
-});
+// Default API routes (redirect to latest version - v1)
+Route::any('/{any}', function () {
+    return response()->json([
+        'success' => false,
+        'message' => 'API endpoint not found. Please use versioned endpoints.',
+        'data' => [
+            'available_versions' => ['v1'],
+            'current_version' => 'v1',
+            'base_url' => url('/api/v1'),
+            'documentation' => url('/api/documentation'),
+        ],
+        'meta' => [
+            'timestamp' => now()->toIso8601String(),
+            'version' => '1.0',
+        ],
+    ], 404);
+})->where('any', '.*');

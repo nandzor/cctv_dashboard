@@ -1,16 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 
-class TestController extends BaseController
-{
+class TestController extends BaseController {
     /**
      * Test endpoint untuk static token
      */
-    public function index()
-    {
+    public function index() {
         return $this->successResponse([
             'authenticated' => true,
             'timestamp' => now()->toDateTimeString(),
@@ -21,8 +19,7 @@ class TestController extends BaseController
     /**
      * Test endpoint dengan parameter
      */
-    public function show($id)
-    {
+    public function show($id) {
         return $this->successResponse([
             'id' => $id,
             'name' => 'Test Item ' . $id,
@@ -34,8 +31,7 @@ class TestController extends BaseController
     /**
      * Test endpoint POST
      */
-    public function store(Request $request)
-    {
+    public function store(Request $request) {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -52,8 +48,7 @@ class TestController extends BaseController
     /**
      * Test ping endpoint
      */
-    public function ping()
-    {
+    public function ping() {
         return $this->successResponse([
             'timestamp' => microtime(true),
         ], 'pong');
@@ -62,8 +57,7 @@ class TestController extends BaseController
     /**
      * Test echo endpoint
      */
-    public function echo(Request $request)
-    {
+    public function echo(Request $request) {
         return $this->successResponse([
             'your_data' => $request->all(),
             'headers' => [
@@ -73,4 +67,3 @@ class TestController extends BaseController
         ], 'Echo response');
     }
 }
-

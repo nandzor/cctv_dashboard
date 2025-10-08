@@ -1,16 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 
-class StaticAuthController extends BaseController
-{
+class StaticAuthController extends BaseController {
     /**
      * Validate static token
      */
-    public function validate(Request $request)
-    {
+    public function validate(Request $request) {
         return $this->successResponse([
             'timestamp' => now()->toDateTimeString()
         ], 'Token is valid');
@@ -19,8 +17,7 @@ class StaticAuthController extends BaseController
     /**
      * Get API info
      */
-    public function info()
-    {
+    public function info() {
         return $this->successResponse([
             'api_version' => '1.0',
             'app_name' => config('app.name'),
@@ -38,4 +35,3 @@ class StaticAuthController extends BaseController
         ], 'API Information');
     }
 }
-

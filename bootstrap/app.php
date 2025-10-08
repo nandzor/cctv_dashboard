@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'static.token' => \App\Http\Middleware\ValidateStaticToken::class,
             'admin' => \App\Http\Middleware\AdminOnly::class,
             'api.key' => \App\Http\Middleware\ApiKeyAuth::class,
+            'api.version' => \App\Http\Middleware\ApiVersion::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -190,15 +190,15 @@ class ApiResponseHelper {
     }
 
     /**
-     * Get execution time
+     * Get execution time in milliseconds
      *
      * @return string
      */
     private static function getExecutionTime(): string {
         if (defined('LARAVEL_START')) {
             $time = microtime(true) - LARAVEL_START;
-            return round($time, 3) . 's';
+            return round($time * 1000, 2) . 'ms';
         }
-        return '0s';
+        return '0ms';
     }
 }

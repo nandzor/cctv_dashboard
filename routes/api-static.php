@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Api\StaticAuthController;
-use App\Http\Controllers\Api\TestController;
+use App\Http\Controllers\Api\V1\StaticAuthController;
+use App\Http\Controllers\Api\V1\TestController;
 use Illuminate\Support\Facades\Route;
 
 /*
