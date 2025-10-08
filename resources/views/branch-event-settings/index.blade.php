@@ -83,34 +83,23 @@
     <!-- Filters -->
     <div class="p-6 border-b border-gray-200 bg-gray-50">
       <form method="GET" action="{{ route('branch-event-settings.index') }}"
-        class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <input type="hidden" name="search" value="{{ $search }}">
         <input type="hidden" name="per_page" value="{{ $perPage }}">
 
         <x-company-branch-select name="branch_id" :value="$branchId" placeholder="All Branches" />
 
-        <x-select name="device_id" :value="$deviceId">
-          <option value="">All Devices</option>
-          @foreach ($devices as $device)
-            <option value="{{ $device->device_id }}" {{ $deviceId == $device->device_id ? 'selected' : '' }}>
-              {{ $device->device_name }} ({{ $device->device_id }})
-            </option>
-          @endforeach
-        </x-select>
+        <x-status-select name="is_active" :value="$isActive" />
 
-        <x-select name="is_active" :value="$isActive">
-          <option value="">All Status</option>
-          <option value="1" {{ $isActive === '1' ? 'selected' : '' }}>Active</option>
-          <option value="0" {{ $isActive === '0' ? 'selected' : '' }}>Inactive</option>
-        </x-select>
-
-        <x-button type="submit" variant="primary" size="sm">
-          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
-          </svg>
-          Apply Filters
-        </x-button>
+        <div class="flex justify-end">
+          <x-button type="submit" variant="primary" size="sm" class="w-auto">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+            </svg>
+            Apply Filters
+          </x-button>
+        </div>
       </form>
     </div>
 

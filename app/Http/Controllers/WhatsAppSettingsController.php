@@ -3,13 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\WhatsAppSettings;
+use App\Services\WhatsAppSettingsService;
 use Illuminate\Http\Request;
 
 class WhatsAppSettingsController extends Controller {
+    protected $whatsappSettingsService;
+
+    public function __construct(WhatsAppSettingsService $whatsappSettingsService)
+    {
+        $this->whatsappSettingsService = $whatsappSettingsService;
+    }
     public function index() {
-        $whatsappSettings = WhatsAppSettings::orderBy('is_default', 'desc')
-            ->orderBy('name')
-            ->get();
+        $whatsappSettings = $this->whatsappSettingsService->getAll();
 
         return view('whatsapp-settings.index', compact('whatsappSettings'));
     }
@@ -28,19 +33,15 @@ class WhatsAppSettingsController extends Controller {
             'is_default' => ['nullable', 'boolean'],
         ]);
 
-        // Convert phone numbers string to array
-        $phoneNumbers = array_map('trim', explode(',', $data['phone_numbers']));
-        $data['phone_numbers'] = array_filter($phoneNumbers, function ($number) {
-            return !empty($number);
-        });
+        try {
+            $this->whatsappSettingsService->create($data);
 
-        $data['is_active'] = $data['is_active'] ?? true;
-        $data['is_default'] = $data['is_default'] ?? false;
-
-        WhatsAppSettings::create($data);
-
-        return redirect()->route('whatsapp-settings.index')
-            ->with('success', 'WhatsApp settings created successfully.');
+            return redirect()->route('whatsapp-settings.index')
+                ->with('success', 'WhatsApp settings created successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Failed to create WhatsApp settings: ' . $e->getMessage());
+        }
     }
 
     public function show(WhatsAppSettings $whatsappSettings) {
@@ -61,38 +62,40 @@ class WhatsAppSettingsController extends Controller {
             'is_default' => ['nullable', 'boolean'],
         ]);
 
-        // Convert phone numbers string to array
-        $phoneNumbers = array_map('trim', explode(',', $data['phone_numbers']));
-        $data['phone_numbers'] = array_filter($phoneNumbers, function ($number) {
-            return !empty($number);
-        });
+        try {
+            $this->whatsappSettingsService->update($whatsappSettings, $data);
 
-        $data['is_active'] = $data['is_active'] ?? true;
-        $data['is_default'] = $data['is_default'] ?? false;
+            return redirect()->route('whatsapp-settings.show', $whatsappSettings)
+                ->with('success', 'WhatsApp settings updated successfully.');
 
-        $whatsappSettings->update($data);
-
-        return redirect()->route('whatsapp-settings.show', $whatsappSettings)
-            ->with('success', 'WhatsApp settings updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Failed to update WhatsApp settings: ' . $e->getMessage());
+        }
     }
 
     public function destroy(WhatsAppSettings $whatsappSettings) {
-        // Prevent deletion of default setting
-        if ($whatsappSettings->is_default) {
+        try {
+            $this->whatsappSettingsService->delete($whatsappSettings);
+
+            return redirect()->route('whatsapp-settings.index')
+                ->with('success', 'WhatsApp settings deleted successfully.');
+        } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Cannot delete the default WhatsApp settings.');
+                ->with('error', $e->getMessage());
         }
-
-        $whatsappSettings->delete();
-
-        return redirect()->route('whatsapp-settings.index')
-            ->with('success', 'WhatsApp settings deleted successfully.');
     }
 
     public function setDefault(WhatsAppSettings $whatsappSettings) {
-        $whatsappSettings->update(['is_default' => true]);
+        try {
+            $this->whatsappSettingsService->setAsDefault($whatsappSettings);
 
-        return redirect()->back()
-            ->with('success', 'Default WhatsApp settings updated successfully.');
+            return redirect()->back()
+                ->with('success', 'Default WhatsApp settings updated successfully. All active WhatsApp notifications have been updated.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to update default WhatsApp settings: ' . $e->getMessage());
+        }
     }
 }
