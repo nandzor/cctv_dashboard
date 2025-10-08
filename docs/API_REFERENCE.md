@@ -300,8 +300,9 @@ Authorization: Bearer user-token
 #### Log Person Detection (Async)
 
 ```http
-POST /api/detection/log
-Authorization: Bearer api-key
+POST /api/v1/detection/log
+X-API-Key: your-api-key
+X-API-Secret: your-api-secret
 Content-Type: multipart/form-data
 ```
 
@@ -309,12 +310,14 @@ Content-Type: multipart/form-data
 
 ```json
 {
-  "re_id": "person_001_abc123",
-  "branch_id": 1,
-  "device_id": "CAMERA_001",
-  "detected_count": 1,
-  "detection_data": {
+  "re_id": "person_001_abc123",        // Required - Person identifier
+  "branch_id": 1,                      // Required - Branch ID
+  "device_id": "CAM_JKT001_001",       // Required - Device ID
+  "detected_count": 1,                 // Optional - Number of detections (default: 1)
+  "detection_data": {                  // Optional - Detection metadata
     "confidence": 0.95,
+    "location": "entrance",
+    "appearance_features": ["blue_shirt", "black_pants"],
     "bounding_box": {
       "x": 120,
       "y": 150,
@@ -322,34 +325,69 @@ Content-Type: multipart/form-data
       "height": 200
     }
   },
-  "image": "<file>" // Optional
+  "image": "<file>" // Optional                   // Optional - Image file (JPEG/PNG) stored in whatsapp_detection_dd-mm-yyyy folder
 }
 ```
+
+**Field Requirements:**
+- ✅ **Required**: `re_id`, `branch_id`, `device_id`
+- ⚪ **Optional**: `detected_count`, `detection_data`, `image` ( Optional if provided, will be processed and sent via WhatsApp)
+
+**Image Storage Structure:**
+```
+storage/app/
+├── whatsapp_detection_08-10-2025/     // Today's folder
+│   ├── 1696789123_abc123.jpg         // Original image
+│   ├── 1696789123_abc123_thumb.jpg   // Thumbnail (320x240)
+│   └── ...
+├── whatsapp_detection_09-10-2025/     // Tomorrow's folder
+│   └── ...
+└── whatsapp_detection_10-10-2025/     // Day after tomorrow
+    └── ...
+```
+
+**Image Processing:**
+- ✅ **Auto-resize**: Images > 1920x1080 are resized maintaining aspect ratio
+- ✅ **Watermark**: Timestamp and event ID added to image
+- ✅ **Thumbnail**: 320x240 thumbnail created automatically
+- ✅ **Quality**: Optimized to 85% quality for original, 75% for thumbnail
+
+**Re-ID Uniqueness Logic:**
+- ✅ **Daily Unique**: Same re_id can exist on different dates
+- ✅ **New Person Each Day**: Each day creates a new person record
+- ✅ **Unique Constraint**: (re_id, detection_date)
+- ✅ **Historical Tracking**: Maintains detection history per day
 
 **Response (202 Accepted - Async Processing):**
 
 ```json
 {
   "success": true,
-  "message": "Detection submitted successfully",
+  "message": "Detection event received and queued successfully",
   "data": {
+    "job_id": "4ffd24b1-fcaf-4b2c-98ac-7ecb4097c611",
+    "status": "processing",
+    "message": "Detection queued for processing",
     "re_id": "person_001_abc123",
     "branch_id": 1,
-    "device_id": "CAMERA_001",
-    "status": "processing",
-    "job_id": "uuid-here",
-    "message": "Detection queued for processing"
+    "device_id": "CAM_JKT001_001"
   },
   "meta": {
-    "timestamp": "2024-01-16T14:30:00Z",
+    "timestamp": "2025-10-08T23:00:10+07:00",
     "version": "1.0",
-    "request_id": "uuid-here",
-    "query_count": 2,
-    "memory_usage": "1.8 MB",
-    "execution_time": "0.045s"
+    "request_id": "4b500cc9-1664-42c4-abb9-0e16ef7a7113",
+    "query_count": 0,
+    "memory_usage": "1.43 MB",
+    "execution_time": "50.87ms"
   }
 }
 ```
+
+**Async Processing Chain:**
+1. ✅ **ProcessDetectionJob** → Creates ReIdMaster + EventLog
+2. ✅ **ProcessDetectionImageJob** → Resizes, watermarks, creates thumbnail
+3. ✅ **SendWhatsAppNotificationJob** → Sends WhatsApp notification via WAHA
+4. ✅ **UpdateDailyReportJob** → Updates daily statistics
 
 **Note:** Returns `202 Accepted` because processing is asynchronous. Performance metrics show only validation time, not full processing time.
 
@@ -421,6 +459,83 @@ Authorization: Bearer api-key
 - `date` (optional): Filter by date
 
 **Response:** Paginated detection records
+
+---
+
+### 📱 WhatsApp Integration (WAHA)
+
+#### WhatsApp Configuration
+
+**WAHA (WhatsApp HTTP API) Integration:**
+- ✅ **WAHA Server**: External WhatsApp HTTP API server
+- ✅ **Session Management**: Automatic session handling
+- ✅ **Image Support**: Send images with messages
+- ✅ **Phone Formatting**: Automatic Indonesia (+62) formatting
+- ✅ **Error Handling**: Comprehensive error handling and retry logic
+
+**Environment Configuration:**
+```env
+WAHA_URL=http://localhost:3000
+WAHA_SESSION_ID=default
+WHATSAPP_DEFAULT_COUNTRY_CODE=62
+WHATSAPP_TIMEOUT=30
+WHATSAPP_RETRY_ATTEMPTS=3
+WHATSAPP_RETRY_DELAY=5
+```
+
+**Automatic WhatsApp Notifications:**
+- ✅ **Trigger**: Detection events automatically trigger WhatsApp notifications
+- ✅ **Template Support**: Customizable message templates with variables
+- ✅ **Multi-recipient**: Send to multiple phone numbers
+- ✅ **Image Attachment**: Include detection images
+- ✅ **Queue Processing**: Async processing via SendWhatsAppNotificationJob
+
+**Message Template Variables:**
+```json
+{
+  "branch_name": "Jakarta Central",
+  "device_name": "Main Entrance Camera",
+  "device_id": "CAM_JKT001_001",
+  "re_id": "person_001_abc123",
+  "person_name": "John Doe",
+  "detected_count": 1,
+  "timestamp": "2025-10-08 23:00:10",
+  "date": "2025-10-08",
+  "time": "23:00:10"
+}
+```
+
+**Example WhatsApp Message:**
+```
+🚨 Detection Alert
+Branch: Jakarta Central
+Device: Main Entrance Camera
+Person: person_001_abc123
+Time: 2025-10-08 23:00:10
+Count: 1 detection(s)
+```
+
+#### WhatsApp Helper Functions
+
+**Send Message:**
+```php
+WhatsAppHelper::sendMessage(
+    '081234567890',           // Phone number
+    'Detection alert message', // Message text
+    'path/to/image.jpg',      // Optional image
+    ['event_log_id' => 123]   // Optional metadata
+);
+```
+
+**Check Session Status:**
+```php
+WhatsAppHelper::checkSessionStatus();
+```
+
+**Start Session:**
+```php
+WhatsAppHelper::startSession();
+```
 
 ---
 
@@ -820,6 +935,10 @@ All credentials have:
 | `FILE_UPLOAD_FAILED`   | 400         | File upload error           |
 | `ENCRYPTION_FAILED`    | 500         | Encryption/decryption error |
 | `TRACKING_DISABLED`    | 403         | Person tracking disabled    |
+|| `WAHA_SESSION_ERROR`   | 503         | WAHA session not available  |
+|| `WAHA_UPLOAD_FAILED`   | 503         | WAHA image upload failed    |
+|| `IMAGE_PROCESSING_FAILED` | 500       | Image resize/watermark failed |
+|| `RE_ID_CONSTRAINT_ERROR` | 400        | Re-ID uniqueness violation  |
 
 ---
 
@@ -868,20 +987,50 @@ X-Execution-Time: 0.125s
 #### Person Detection
 
 ```bash
-curl -X POST https://api.cctv.com/api/detection/log \
-  -H "X-API-Key: your-api-key" \
-  -H "X-API-Secret: your-api-secret" \
+# Minimal request (only required fields)
+curl -X POST http://localhost:8000/api/v1/detection/log \
+  -H "X-API-Key: cctv_test_dev_key" \
+  -H "X-API-Secret: secret_test_dev_2024" \
+  -H "Accept: application/json" \
   -H "Content-Type: application/json" \
   -d '{
-    "re_id": "person_001_abc123",
+    "re_id": "test_person_001",
     "branch_id": 1,
-    "device_id": "CAMERA_001",
-    "detected_count": 1,
-    "detection_data": {
-      "confidence": 0.95,
-      "bounding_box": {"x": 120, "y": 150, "width": 80, "height": 200}
+    "device_id": "CAM_JKT001_001"
+  }'
+
+# Full request (with optional fields)
+curl -X POST http://localhost:8000/api/v1/detection/log \
+  -H "X-API-Key: cctv_test_dev_key" \
+  -H "X-API-Secret: secret_test_dev_2024" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "re_id": "test_person_001",
+    "branch_id": 1,
+    "device_id": "CAM_JKT001_001",
+    "detected_count": 1,      // Optional feature comming soon
+    "detection_data": {       // Optional feature comming soon
+      "confidence": 0.95, 
+      "location": "entrance", 
+      "appearance_features": ["blue_shirt", "black_pants"]
     }
   }'
+```
+
+**With Image Upload:**
+```bash
+curl -X POST http://localhost:8000/api/v1/detection/log \
+  -H "X-API-Key: cctv_test_dev_key" \
+  -H "X-API-Secret: secret_test_dev_2024" \
+  -H "Accept: application/json" \
+  -F "re_id=test_person_001" \
+  -F "branch_id=1" \
+  -F "device_id=CAM_JKT001_001" \
+  -F "detected_count=1" \     // Optional
+  -F "detection_data[confidence]=0.95" \      // Optional
+  -F "detection_data[location]=entrance" \    // Optional
+  -F "image=@/path/to/image.jpg"
 ```
 
 #### Get Person Info
@@ -897,7 +1046,7 @@ curl -X GET "https://api.cctv.com/api/person/person_001_abc123?date=2024-01-16" 
 ```javascript
 // Detection Logging
 const logDetection = async (data) => {
-  const response = await fetch("/api/detection/log", {
+  const response = await fetch("/api/v1/detection/log", {
     method: "POST",
     headers: {
       "X-API-Key": "your-api-key",
@@ -909,6 +1058,20 @@ const logDetection = async (data) => {
 
   return await response.json();
 };
+
+// Example usage
+const detectionData = {
+  re_id: "person_001_abc123",        // Required
+  branch_id: 1,                       // Required
+  device_id: "CAMERA_001",           // Required
+  detected_count: 1,                  // Optional (default: 1)
+  detection_data: {                   // Optional
+    confidence: 0.95,
+    bounding_box: {x: 120, y: 150, width: 80, height: 200}
+  }
+};
+
+const result = await logDetection(detectionData);
 
 // Get Person Info
 const getPersonInfo = async (reId) => {
@@ -946,11 +1109,11 @@ def log_detection(data):
 
 # Usage
 detection_data = {
-    're_id': 'person_001_abc123',
-    'branch_id': 1,
-    'device_id': 'CAMERA_001',
-    'detected_count': 1,
-    'detection_data': {
+    're_id': 'person_001_abc123',        # Required
+    'branch_id': 1,                       # Required
+    'device_id': 'CAMERA_001',           # Required
+    'detected_count': 1,                  # Optional (default: 1)
+    'detection_data': {                   # Optional
         'confidence': 0.95,
         'bounding_box': {'x': 120, 'y': 150, 'width': 80, 'height': 200}
     }
@@ -1126,6 +1289,28 @@ curl -v https://api.cctv.com/api/person/person_001_abc123 \
 ---
 
 ## 📝 Changelog
+
+### Version 1.1.0 (Latest)
+
+**New Features:**
+- ✅ **Re-ID Daily Uniqueness**: Same re_id can exist on different dates
+- ✅ **WhatsApp Integration**: WAHA (WhatsApp HTTP API) integration
+- ✅ **Image Processing**: Automatic resize, watermark, thumbnail generation
+- ✅ **Daily Storage Folders**: Images stored in `whatsapp_detection_dd-mm-yyyy` folders
+- ✅ **Enhanced Detection Data**: Support for appearance_features, location, bounding_box
+- ✅ **Queue Job Chain**: ProcessDetectionJob → ProcessDetectionImageJob → SendWhatsAppNotificationJob
+- ✅ **Migration Files**: Database constraint fixes for re_id uniqueness
+
+**API Changes:**
+- ✅ **Endpoint**: Updated to `/api/v1/detection/log`
+- ✅ **Authentication**: X-API-Key + X-API-Secret headers
+- ✅ **Image Upload**: Optional image field with multipart/form-data support
+- ✅ **Response Format**: Enhanced with job_id and processing status
+
+**Database Changes:**
+- ✅ **Unique Constraint**: Changed from `re_id` to `(re_id, detection_date)`
+- ✅ **Foreign Keys**: Removed foreign key constraints on re_id alone
+- ✅ **Migration Files**: Added constraint fix migrations
 
 ### Version 1.0.0
 

@@ -25,8 +25,7 @@ return new class extends Migration {
             $table->timestamps();
 
             // Unique constraints
-            $table->unique(['re_id', 'detection_date']);
-            $table->unique('re_id'); // Add unique constraint on re_id for foreign key
+            $table->unique(['re_id', 'detection_date']); // Unique by re_id + date (allows same re_id on different dates)
 
             // Indexes
             $table->index('re_id');
