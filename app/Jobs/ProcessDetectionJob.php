@@ -10,6 +10,9 @@ use Illuminate\Queue\SerializesModels;
 use App\Models\ReIdMaster;
 use App\Models\ReIdBranchDetection;
 use App\Models\EventLog;
+use App\Jobs\ProcessDetectionImageJob;
+use App\Jobs\SendWhatsAppNotificationJob;
+use App\Jobs\UpdateDailyReportJob;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -54,7 +57,7 @@ class ProcessDetectionJob implements ShouldQueue {
                 $today = now()->toDateString();
                 $detectionTime = now();
 
-                $reIdMaster = ReIdMaster::updateOrCreate(
+                $reIdMaster = ReIdMaster::firstOrCreate(
                     [
                         're_id' => $this->reId,
                         'detection_date' => $today,
@@ -62,15 +65,18 @@ class ProcessDetectionJob implements ShouldQueue {
                     [
                         'appearance_features' => $this->detectionData['appearance_features'] ?? [],
                         'detection_time' => $detectionTime,
-                        'total_detection_branch_count' => DB::raw('total_detection_branch_count + 1'),
-                        'total_actual_count' => DB::raw('total_actual_count + ' . $this->detectedCount),
+                        'total_detection_branch_count' => 1,
+                        'total_actual_count' => $this->detectedCount,
+                        'first_detected_at' => $detectionTime,
                         'last_detected_at' => $detectionTime,
                     ]
                 );
 
-                // Set first_detected_at if new
-                if ($reIdMaster->wasRecentlyCreated) {
-                    $reIdMaster->update(['first_detected_at' => $detectionTime]);
+                // Update counters if not newly created
+                if (!$reIdMaster->wasRecentlyCreated) {
+                    $reIdMaster->increment('total_detection_branch_count');
+                    $reIdMaster->increment('total_actual_count', $this->detectedCount);
+                    $reIdMaster->update(['last_detected_at' => $detectionTime]);
                 }
 
                 // 2. Log detection in re_id_branch_detections
