@@ -25,17 +25,21 @@
         <x-input name="device_name" label="Device Name" :value="$deviceMaster->device_name" placeholder="Main Entrance Camera" required
           hint="Descriptive name for the device" />
 
-        <x-device-type-select name="device_type" :value="$deviceMaster->device_type" label="Device Type" required hint="Select the type of device" />
+        <x-device-type-select name="device_type" :value="$deviceMaster->device_type" label="Device Type" required
+          hint="Select the type of device" />
 
-        <x-company-branch-select name="branch_id" :value="$deviceMaster->branch_id" label="Branch" required hint="Select the branch where this device is located" />
+        <x-company-branch-select name="branch_id" :value="$deviceMaster->branch_id" label="Branch" required
+          hint="Select the branch where this device is located" />
 
         <x-input name="url" label="URL / IP Address" :value="$deviceMaster->url" placeholder="rtsp://192.168.1.100:554/stream1"
           hint="Network address or URL for the device" />
 
         <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div class="flex">
-            <svg class="w-5 h-5 text-yellow-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg class="w-5 h-5 text-yellow-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
               <p class="text-sm font-medium text-yellow-800">Credential Update</p>
@@ -51,13 +55,11 @@
             hint="Login password for the device" />
         </div>
 
-        <x-textarea name="notes" label="Notes" :value="$deviceMaster->notes" placeholder="Additional information about the device..."
-          rows="3" hint="Optional notes or comments" />
+        <x-textarea name="notes" label="Notes" :value="$deviceMaster->notes"
+          placeholder="Additional information about the device..." rows="3" hint="Optional notes or comments" />
 
-        <x-select name="status" label="Status" :value="$deviceMaster->status" required hint="Device status">
-          <option value="active" {{ $deviceMaster->status === 'active' ? 'selected' : '' }}>Active</option>
-          <option value="inactive" {{ $deviceMaster->status === 'inactive' ? 'selected' : '' }}>Inactive</option>
-        </x-select>
+        <x-select name="status" label="Status" :options="['active' => 'Active', 'inactive' => 'Inactive']" :selected="$deviceMaster->status" placeholder="" required
+          hint="Device status" />
 
         <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
           <x-button variant="secondary" :href="route('device-masters.show', $deviceMaster)">
@@ -74,5 +76,3 @@
     </x-card>
   </div>
 @endsection
-
-

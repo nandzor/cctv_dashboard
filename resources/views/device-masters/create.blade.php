@@ -21,25 +21,23 @@
 
         <x-device-type-select name="device_type" label="Device Type" required hint="Select the type of device" />
 
-        <x-company-branch-select name="branch_id" label="Branch" required hint="Select the branch where this device is located" />
+        <x-company-branch-select name="branch_id" label="Branch" required
+          hint="Select the branch where this device is located" />
 
         <x-input name="url" label="URL / IP Address" placeholder="rtsp://192.168.1.100:554/stream1"
           hint="Network address or URL for the device" />
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <x-input name="username" label="Username" placeholder="Enter username"
-            hint="Login username for the device" />
+          <x-input name="username" label="Username" placeholder="Enter username" hint="Login username for the device" />
           <x-input type="password" name="password" label="Password" placeholder="Enter password"
             hint="Login password for the device" />
         </div>
 
-        <x-textarea name="notes" label="Notes" placeholder="Additional information about the device..."
-          rows="3" hint="Optional notes or comments" />
+        <x-textarea name="notes" label="Notes" placeholder="Additional information about the device..." rows="3"
+          hint="Optional notes or comments" />
 
-        <x-select name="status" label="Status" required hint="Device status">
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </x-select>
+        <x-select name="status" label="Status" :options="['active' => 'Active', 'inactive' => 'Inactive']" selected="active" placeholder="" required
+          hint="Device status" />
 
         <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
           <x-button variant="secondary" :href="route('device-masters.index')">
@@ -56,5 +54,3 @@
     </x-card>
   </div>
 @endsection
-
-
