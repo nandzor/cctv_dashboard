@@ -52,12 +52,23 @@ class DashboardController extends Controller {
             ->limit(10)
             ->get();
 
-        // Detection trend (last 7 days)
-        $detectionTrend = ReIdBranchDetection::selectRaw('DATE(detection_timestamp) as date, COUNT(*) as count')
-            ->where('detection_timestamp', '>=', now()->subDays(7))
+        // Detection trend (last 7 days) - Fill all 7 days even if no data
+        $detectionData = ReIdBranchDetection::selectRaw('DATE(detection_timestamp) as date, COUNT(*) as count')
+            ->where('detection_timestamp', '>=', now()->subDays(6)->startOfDay())
             ->groupBy('date')
             ->orderBy('date')
-            ->get();
+            ->get()
+            ->keyBy('date');
+
+        // Fill all 7 days (including days with 0 detections)
+        $detectionTrend = collect();
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $detectionTrend->push((object)[
+                'date' => $date,
+                'count' => $detectionData->get($date)->count ?? 0
+            ]);
+        }
 
         $maxDetectionCount = $detectionTrend->max('count') ?: 1;
 

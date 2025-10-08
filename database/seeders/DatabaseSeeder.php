@@ -31,6 +31,13 @@ class DatabaseSeeder extends Seeder {
 
             // 6. API credentials (depends on users, branches, devices)
             ApiCredentialSeeder::class,
+
+            // 7. Re-ID data (depends on branches and devices)
+            ReIdMasterSeeder::class,
+            ReIdBranchDetectionSeeder::class,
+
+            // 8. Event logs (depends on branches, devices, and re-id data)
+            EventLogSeeder::class,
         ]);
 
         $this->command->info('Database seeded successfully!');

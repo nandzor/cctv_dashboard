@@ -18,7 +18,7 @@ class ReIdMasterService extends BaseService {
      */
     public function getPersonWithDetections(string $reId, string $date) {
         return ReIdMaster::with([
-            'reIdBranchDetections' => function ($query) use ($date) {
+            'branchDetections' => function ($query) use ($date) {
                 $query->whereDate('detection_timestamp', $date)
                     ->with(['branch', 'device'])
                     ->orderBy('detection_timestamp', 'desc');
@@ -34,7 +34,7 @@ class ReIdMasterService extends BaseService {
      */
     public function getAllDetectionsForPerson(string $reId) {
         return ReIdMaster::where('re_id', $reId)
-            ->with('reIdBranchDetections.branch')
+            ->with('branchDetections.branch')
             ->orderBy('detection_date', 'desc')
             ->get();
     }
