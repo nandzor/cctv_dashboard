@@ -39,6 +39,7 @@
 - **Storage**: Local/S3 with registry tracking
 - **WhatsApp**: WAHA/Twilio integration
 - **Image Processing**: Intervention/Image
+- **Architecture**: Service Layer Pattern for business logic separation
 
 ## 📋 Main Menu Structure
 
@@ -151,6 +152,7 @@
   - Appearance features (JSON)
   - Detection statistics
   - First/last detected timestamps
+  - Ordered by `last_detected_at DESC` (newest first)
 
 - **Person Details**
 
@@ -159,7 +161,12 @@
   - Appearance features (clothing colors, height, etc.)
   - Total detection count
   - Branches that detected this person
-  - Detection timeline
+  - **Branch Detection Summary Table** (NEW)
+    - Single-column card layout
+    - Total Count with blue badge
+    - First/Last detection times per branch
+    - Clean visual hierarchy
+  - Detection timeline (repositioned below Person Information)
   - Associated events
 
 - **Person Tracking**
@@ -167,6 +174,7 @@
   - View detection history
   - Appearance feature analysis
   - Cross-branch movement patterns
+  - **Branch Detection Counts**: Aggregated statistics per branch
 
 ### **5. Live CCTV View** 📺
 
@@ -979,12 +987,20 @@ Report Request → UpdateDailyReportJob Dispatched
 ### **Frontend Optimization**
 
 - **Blade Components**: Reusable UI components
+  - ✅ **x-button**: Consistent button styling with variants
+  - ✅ **x-card**: Standardized card layouts
+  - ✅ **x-badge**: Status indicators with color variants
+  - ✅ **x-stat-card**: Statistics display cards
+  - ✅ **x-action-dropdown**: Interactive dropdown menus
+  - ✅ **x-table**: Responsive table components
+  - ✅ **x-select**: Reusable select components (branch, device, status)
 - **Alpine.js**: Lightweight interactivity (no heavy JS framework)
 - **Lazy Loading**: Images and content
 - **Livewire (Optional)**: For reactive components
 - **Vite**: Asset bundling and HMR
 - **CDN**: Static assets delivery
 - **Turbo/Inertia (Optional)**: SPA-like experience
+- **DRY Principles**: Consistent use of reusable components across all pages
 
 ### **API Response Standardization**
 
@@ -1003,6 +1019,37 @@ Report Request → UpdateDailyReportJob Dispatched
 - **Multi-disk Support**: Local, S3, Public disks
 
 ---
+
+## 🏗️ Service Layer Architecture
+
+### **Service Classes**
+
+**Purpose**: Separate business logic from controllers for better maintainability and testability.
+
+**Key Services:**
+
+- ✅ **ReIdMasterService**: Person tracking and detection management
+  - `getBranchDetectionCounts()`: Branch detection statistics
+  - `getPersonWithDetections()`: Person details with detection history
+  - `getAllDetectionsForPerson()`: Cross-date person tracking
+  - `getByDateRange()`: Date-filtered person queries
+  - `getStatistics()`: Aggregated statistics
+- ✅ **WhatsAppSettingsService**: WhatsApp configuration management
+  - `setAsDefault()`: Update default settings
+  - `updateBranchEventSettings()`: Sync settings across branches
+  - `getActive()`: Get active WhatsApp settings
+- ✅ **BaseService**: Common service functionality
+  - Pagination, filtering, search
+  - CRUD operations
+  - Query optimization
+
+**Benefits:**
+
+- ✅ **Separation of Concerns**: Controllers handle HTTP, services handle business logic
+- ✅ **Reusability**: Services can be used across multiple controllers
+- ✅ **Testability**: Business logic can be unit tested independently
+- ✅ **Maintainability**: Changes to business rules centralized in services
+- ✅ **Performance**: Optimized queries and caching in service layer
 
 ## 📋 Database Tables Summary
 

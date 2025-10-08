@@ -3589,6 +3589,35 @@ GROUP BY cb.id, cb.branch_name, cb.city_name
 ORDER BY total_detections DESC;
 ```
 
+### **Get Branch Detection Counts (NEW - Branch Detection Summary)**
+
+```sql
+-- ✅ Get branch detection counts for a specific person and date
+-- Used in ReIdMasterService::getBranchDetectionCounts()
+SELECT
+    cb.id as branch_id,
+    cb.branch_name,
+    cb.branch_code,
+    COUNT(rbd.id) as detection_count,
+    SUM(rbd.detected_count) as total_detected_count,
+    MIN(rbd.detection_timestamp) as first_detection,
+    MAX(rbd.detection_timestamp) as last_detection
+FROM re_id_branch_detections rbd
+JOIN company_branches cb ON rbd.branch_id = cb.id
+WHERE rbd.re_id = 'person_001_abc123'
+  AND DATE(rbd.detection_timestamp) = '2024-01-16'
+GROUP BY cb.id, cb.branch_name, cb.branch_code
+ORDER BY total_detected_count DESC;
+```
+
+**Purpose:** Provides aggregated branch detection statistics for the Branch Detection Summary table in `/re-id-masters/` detail page.
+
+**Fields:**
+- `detection_count`: Number of detection events per branch
+- `total_detected_count`: Sum of all detected_count values per branch
+- `first_detection`: Earliest detection timestamp per branch
+- `last_detection`: Latest detection timestamp per branch
+
 ### **Get API Usage Statistics**
 
 ```sql
@@ -6897,6 +6926,15 @@ class SecurityHeaders
 
 - ✅ **Form Requests**: Separate validation logic
 - ✅ **Service Classes**: Business logic in service layer
+  - **ReIdMasterService**: Person tracking and detection management
+    - `getBranchDetectionCounts()`: Branch detection statistics with MIN/MAX timestamps
+    - `getPersonWithDetections()`: Person details with detection history
+    - `getAllDetectionsForPerson()`: Cross-date person tracking
+    - `getByDateRange()`: Date-filtered person queries
+    - `getStatistics()`: Aggregated statistics
+  - **WhatsAppSettingsService**: WhatsApp configuration management
+    - `setAsDefault()`: Update default settings
+    - `updateBranchEventSettings()`: Sync settings across branches
 - ✅ **Job Classes**: Background processing
 - ✅ **Resource Classes**: Consistent API responses
 - ✅ **Middleware**: Reusable request filtering

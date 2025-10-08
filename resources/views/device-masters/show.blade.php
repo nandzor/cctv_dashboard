@@ -65,8 +65,10 @@
                         <dt class="text-sm font-medium text-gray-500">Password</dt>
                         <dd class="mt-1 text-sm text-gray-900">
                             @if($deviceMaster->password)
-                                <span class="text-gray-400">●●●●●●●●</span>
-                                <span class="text-xs text-gray-500">(Encrypted)</span>
+                                <x-badge variant="secondary">
+                                    <span class="text-gray-400">●●●●●●●●</span>
+                                    <span class="text-xs text-gray-500 ml-1">(Encrypted)</span>
+                                </x-badge>
                             @else
                                 N/A
                             @endif
@@ -80,14 +82,25 @@
             </x-card>
         </div>
 
-        <div>
-            <x-card title="Device Stats">
-                <div class="space-y-4">
-                    <div class="text-center py-4">
-                        <p class="text-sm text-gray-500">Stats will be available after first detection</p>
-                    </div>
-                </div>
-            </x-card>
+        <div class="space-y-4">
+            <x-stat-card
+                title="Detection Events"
+                value="0"
+                color="blue"
+                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'/>"
+            />
+            <x-stat-card
+                title="Last Detection"
+                value="Never"
+                color="indigo"
+                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'/>"
+            />
+            <x-stat-card
+                title="Uptime"
+                value="100%"
+                color="green"
+                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'/>"
+            />
         </div>
     </div>
 

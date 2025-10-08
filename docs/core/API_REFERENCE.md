@@ -433,6 +433,26 @@ Authorization: Bearer api-key
         "branch_name": "Jakarta South",
         "detection_count": 5
       }
+    ],
+    "branch_detection_counts": [
+      {
+        "branch_id": 1,
+        "branch_name": "Jakarta Central Branch",
+        "branch_code": "JKT001",
+        "detection_count": 2,
+        "total_detected_count": 2,
+        "first_detection": "2024-01-16T08:30:00Z",
+        "last_detection": "2024-01-16T16:45:00Z"
+      },
+      {
+        "branch_id": 2,
+        "branch_name": "Jakarta South Branch",
+        "branch_code": "JKT002",
+        "detection_count": 1,
+        "total_detected_count": 1,
+        "first_detection": "2024-01-16T10:15:00Z",
+        "last_detection": "2024-01-16T10:15:00Z"
+      }
     ]
   },
   "meta": {
@@ -445,6 +465,13 @@ Authorization: Bearer api-key
   }
 }
 ```
+
+**Branch Detection Counts Fields:**
+
+- `detection_count`: Number of detection events per branch
+- `total_detected_count`: Sum of all detected_count values per branch
+- `first_detection`: Earliest detection timestamp per branch
+- `last_detection`: Latest detection timestamp per branch
 
 #### Get Branch Detections
 
@@ -1290,9 +1317,31 @@ curl -v https://api.cctv.com/api/person/person_001_abc123 \
 
 ## 📝 Changelog
 
-### Version 1.1.0 (Latest)
+### Version 1.3.0 (Latest)
 
 **New Features:**
+- ✅ **Branch Detection Summary Table**: Added branch detection counts table in `/re-id-masters/` detail page
+- ✅ **Single Column Layout**: Branch detection summary uses clean single-column card layout
+- ✅ **Detection History Repositioning**: Moved Detection History below Person Information
+- ✅ **Count Column Removal**: Removed redundant Count column from Detection History table
+- ✅ **Badge Integration**: Total Count displayed with blue badge for better visual hierarchy
+- ✅ **Service Layer Enhancement**: Added `getBranchDetectionCounts()` method to ReIdMasterService
+- ✅ **UI Component Consistency**: Maintained reusable Blade components throughout
+
+**API Changes:**
+- ✅ **Branch Detection Data**: Enhanced person detail API with branch detection counts
+- ✅ **Aggregated Statistics**: MIN/MAX detection timestamps per branch
+- ✅ **Performance Optimization**: Efficient database queries with proper indexing
+
+**Database Changes:**
+- ✅ **Query Optimization**: Optimized branch detection count queries with JOIN operations
+- ✅ **Data Aggregation**: MIN/MAX timestamps and COUNT/SUM operations per branch
+- ✅ **Index Usage**: Proper indexing for branch detection count queries
+
+### Version 1.2.0
+
+**New Features:**
+- ✅ **Person Tracking Table Ordering**: Person Tracking table now ordered by `last_detected_at DESC` (newest first)
 - ✅ **Re-ID Daily Uniqueness**: Same re_id can exist on different dates
 - ✅ **WhatsApp Integration**: WAHA (WhatsApp HTTP API) integration
 - ✅ **Image Processing**: Automatic resize, watermark, thumbnail generation
@@ -1300,6 +1349,8 @@ curl -v https://api.cctv.com/api/person/person_001_abc123 \
 - ✅ **Enhanced Detection Data**: Support for appearance_features, location, bounding_box
 - ✅ **Queue Job Chain**: ProcessDetectionJob → ProcessDetectionImageJob → SendWhatsAppNotificationJob
 - ✅ **Migration Files**: Database constraint fixes for re_id uniqueness
+- ✅ **UI Component Refactoring**: Reusable Blade components for buttons, cards, badges, stat-cards
+- ✅ **Service Layer Architecture**: Business logic moved from controllers to dedicated service classes
 
 **API Changes:**
 - ✅ **Endpoint**: Updated to `/api/v1/detection/log`

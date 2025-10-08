@@ -10,7 +10,7 @@ class ReIdMasterService extends BaseService {
     public function __construct() {
         $this->model = new ReIdMaster();
         $this->searchableFields = ['re_id', 'person_name'];
-        $this->orderByColumn = 'detection_date';
+        $this->orderByColumn = 'last_detected_at';
         $this->orderByDirection = 'desc';
     }
 
@@ -36,7 +36,7 @@ class ReIdMasterService extends BaseService {
     public function getAllDetectionsForPerson(string $reId) {
         return ReIdMaster::where('re_id', $reId)
             ->with('branchDetections.branch')
-            ->orderBy('detection_date', 'desc')
+            ->orderBy('last_detected_at', 'desc')
             ->get();
     }
 
@@ -56,8 +56,8 @@ class ReIdMasterService extends BaseService {
             });
         }
 
-        return $query->orderBy('detection_date', 'desc')
-            ->orderBy('detection_time', 'desc')
+        return $query->orderBy('last_detected_at', 'desc')
+            ->orderBy('detection_date', 'desc')
             ->get();
     }
 
@@ -110,6 +110,28 @@ class ReIdMasterService extends BaseService {
 
         return $query->orderBy('total_actual_count', 'desc')
             ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * Get branch detection counts for a specific person and date
+     */
+    public function getBranchDetectionCounts(string $reId, string $date) {
+        return DB::table('re_id_branch_detections as rbd')
+            ->join('company_branches as cb', 'rbd.branch_id', '=', 'cb.id')
+            ->where('rbd.re_id', $reId)
+            ->whereDate('rbd.detection_timestamp', $date)
+            ->select(
+                'cb.id as branch_id',
+                'cb.branch_name',
+                'cb.branch_code',
+                DB::raw('COUNT(rbd.id) as detection_count'),
+                DB::raw('SUM(rbd.detected_count) as total_detected_count'),
+                DB::raw('MIN(rbd.detection_timestamp) as first_detection'),
+                DB::raw('MAX(rbd.detection_timestamp) as last_detection')
+            )
+            ->groupBy('cb.id', 'cb.branch_name', 'cb.branch_code')
+            ->orderBy('total_detected_count', 'desc')
             ->get();
     }
 

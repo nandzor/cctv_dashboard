@@ -72,11 +72,28 @@ class ProcessDetectionJob implements ShouldQueue {
                     ]
                 );
 
+                // Check if this branch already detected this person today (before creating new record)
+                $existingBranchDetection = ReIdBranchDetection::where('re_id', $this->reId)
+                    ->where('branch_id', $this->branchId)
+                    ->whereDate('detection_timestamp', $today)
+                    ->exists();
+
                 // Update counters if not newly created
                 if (!$reIdMaster->wasRecentlyCreated) {
-                    $reIdMaster->increment('total_detection_branch_count');
+                    // Only increment branch count if this is a new branch detection
+                    if (!$existingBranchDetection) {
+                        $reIdMaster->increment('total_detection_branch_count');
+                    }
+
+                    // Always increment actual count (total detections)
                     $reIdMaster->increment('total_actual_count', $this->detectedCount);
-                    $reIdMaster->update(['last_detected_at' => $detectionTime]);
+
+                    // Update timestamps - only update first_detected_at if this is earlier
+                    $updateData = ['last_detected_at' => $detectionTime];
+                    if ($detectionTime < $reIdMaster->first_detected_at) {
+                        $updateData['first_detected_at'] = $detectionTime;
+                    }
+                    $reIdMaster->update($updateData);
                 }
 
                 // 2. Log detection in re_id_branch_detections

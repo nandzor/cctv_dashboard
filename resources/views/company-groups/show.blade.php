@@ -12,14 +12,12 @@
       </div>
       @if (auth()->user()->isAdmin())
         <div class="flex space-x-3">
-          <a href="{{ route('company-groups.edit', $group) }}"
-            class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+          <x-button variant="warning" href="{{ route('company-groups.edit', $group) }}">
             Edit
-          </a>
-          <button @click="confirmDelete({{ $group->id }})"
-            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+          </x-button>
+          <x-button variant="danger" @click="confirmDelete({{ $group->id }})">
             Delete
-          </button>
+          </x-button>
         </div>
       @endif
     </div>
@@ -36,10 +34,9 @@
             <div>
               <dt class="text-sm font-medium text-gray-500">Status</dt>
               <dd class="mt-1">
-                <span
-                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $group->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                <x-badge :variant="$group->status === 'active' ? 'success' : 'danger'">
                   {{ ucfirst($group->status) }}
-                </span>
+                </x-badge>
               </dd>
             </div>
             <div>
@@ -67,23 +64,25 @@
       </div>
 
       <!-- Statistics -->
-      <div>
-        <x-card title="Statistics">
-          <div class="space-y-4">
-            <div class="flex justify-between items-center pb-4 border-b border-gray-200">
-              <span class="text-gray-600">Total Branches</span>
-              <span class="text-2xl font-bold text-blue-600">{{ $branchCounts['total'] }}</span>
-            </div>
-            <div class="flex justify-between items-center pb-4 border-b border-gray-200">
-              <span class="text-gray-600">Active Branches</span>
-              <span class="text-xl font-semibold text-green-600">{{ $branchCounts['active'] }}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-gray-600">Inactive Branches</span>
-              <span class="text-xl font-semibold text-red-600">{{ $branchCounts['inactive'] }}</span>
-            </div>
-          </div>
-        </x-card>
+      <div class="space-y-4">
+        <x-stat-card
+          title="Total Branches"
+          :value="$branchCounts['total']"
+          color="blue"
+          icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'/>"
+        />
+        <x-stat-card
+          title="Active Branches"
+          :value="$branchCounts['active']"
+          color="green"
+          icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'/>"
+        />
+        <x-stat-card
+          title="Inactive Branches"
+          :value="$branchCounts['inactive']"
+          color="red"
+          icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'/>"
+        />
       </div>
     </div>
 
@@ -108,10 +107,9 @@
                   <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $branch->branch_name }}</td>
                   <td class="px-6 py-4 text-sm text-gray-900">{{ $branch->city_name }}</td>
                   <td class="px-6 py-4">
-                    <span
-                      class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $branch->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                    <x-badge :variant="$branch->status === 'active' ? 'success' : 'danger'">
                       {{ ucfirst($branch->status) }}
-                    </span>
+                    </x-badge>
                   </td>
                   <td class="px-6 py-4 text-right text-sm font-medium">
                     <a href="{{ route('company-branches.show', $branch) }}"

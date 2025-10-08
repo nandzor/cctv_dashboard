@@ -10,8 +10,8 @@
             <p class="mt-2 text-gray-600">{{ $branch->city_name }}</p>
         </div>
         <div class="flex space-x-3">
-            <a href="{{ route('company-branches.edit', $branch) }}" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">Edit</a>
-            <button @click="confirmDelete({{ $branch->id }})" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
+            <x-button variant="warning" href="{{ route('company-branches.edit', $branch) }}">Edit</x-button>
+            <x-button variant="danger" @click="confirmDelete({{ $branch->id }})">Delete</x-button>
         </div>
     </div>
 
@@ -52,28 +52,28 @@
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Status</dt>
                         <dd class="mt-1">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $branch->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                            <x-badge :variant="$branch->status === 'active' ? 'success' : 'danger'">
                                 {{ ucfirst($branch->status) }}
-                            </span>
+                            </x-badge>
                         </dd>
                     </div>
                 </dl>
             </x-card>
         </div>
 
-        <div>
-            <x-card title="Statistics">
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center pb-4 border-b border-gray-200">
-                        <span class="text-gray-600">Total Devices</span>
-                        <span class="text-2xl font-bold text-blue-600">{{ $deviceCounts['total'] }}</span>
-                      </div>
-                      <div class="flex justify-between items-center pb-4 border-b border-gray-200">
-                        <span class="text-gray-600">Active Devices</span>
-                        <span class="text-xl font-semibold text-green-600">{{ $deviceCounts['active'] }}</span>
-                    </div>
-                </div>
-            </x-card>
+        <div class="space-y-4">
+            <x-stat-card
+                title="Total Devices"
+                :value="$deviceCounts['total']"
+                color="blue"
+                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'/>"
+            />
+            <x-stat-card
+                title="Active Devices"
+                :value="$deviceCounts['active']"
+                color="green"
+                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'/>"
+            />
         </div>
     </div>
 
@@ -100,9 +100,9 @@
                                 </x-badge>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $device->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                <x-badge :variant="$device->status === 'active' ? 'success' : 'danger'">
                                     {{ ucfirst($device->status) }}
-                                </span>
+                                </x-badge>
                             </td>
                             <td class="px-6 py-4 text-right text-sm font-medium">
                                 <a href="{{ route('device-masters.show', $device) }}" class="text-blue-600 hover:text-blue-900">View</a>

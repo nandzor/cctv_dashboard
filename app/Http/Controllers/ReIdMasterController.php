@@ -71,8 +71,9 @@ class ReIdMasterController extends Controller {
         }
 
         $hasMultipleDetections = $allDetections->count() > 1;
+        $branchDetectionCounts = $this->reIdMasterService->getBranchDetectionCounts($reId, $date);
 
-        return view('re-id-masters.show', compact('person', 'allDetections', 'hasMultipleDetections', 'date'));
+        return view('re-id-masters.show', compact('person', 'allDetections', 'hasMultipleDetections', 'date', 'branchDetectionCounts'));
     }
 
     /**

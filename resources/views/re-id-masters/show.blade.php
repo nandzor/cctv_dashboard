@@ -62,6 +62,54 @@
             @endif
           </dl>
         </x-card>
+
+        <!-- Detection History -->
+        <div class="mt-6">
+          <x-card title="Detection History ({{ $date }})" :padding="false">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Device</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200" x-data="{}">
+                @forelse($person->branchDetections as $detection)
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                      {{ \Carbon\Carbon::parse($detection->detection_timestamp)->format('H:i:s') }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">{{ $detection->branch->branch_name ?? 'N/A' }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">{{ $detection->device->device_name ?? 'N/A' }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                      @if ($detection->detection_data)
+                        <div x-data="{ showJson: false }">
+                          <x-button size="sm" variant="primary" @click="showJson = !showJson">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            <span x-text="showJson ? 'Hide JSON' : 'View JSON'"></span>
+                          </x-button>
+                          <div x-show="showJson" x-cloak x-transition class="mt-3">
+                            <pre class="bg-gray-900 text-green-400 p-4 rounded-lg text-xs overflow-x-auto max-w-full">{{ json_encode($detection->detection_data, JSON_PRETTY_PRINT) }}</pre>
+                          </div>
+                        </div>
+                      @else
+                        <span class="text-gray-400 text-xs">No data</span>
+                      @endif
+                    </td>
+                  </tr>
+                @empty
+                  <tr>
+                    <td colspan="4" class="px-6 py-8 text-center text-gray-400">No detections found for this date</td>
+                  </tr>
+                @endforelse
+              </tbody>
+            </table>
+          </x-card>
+        </div>
       </div>
 
       <div>
@@ -77,57 +125,44 @@
             </div>
           </div>
         </x-card>
-      </div>
-    </div>
 
-    <!-- Detection History -->
-    <div class="mt-8">
-      <x-card title="Detection History ({{ $date }})" :padding="false">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Device</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Count</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200" x-data="{}">
-            @forelse($person->branchDetections as $detection)
-              <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 text-sm text-gray-900">
-                  {{ \Carbon\Carbon::parse($detection->detection_timestamp)->format('H:i:s') }}</td>
-                <td class="px-6 py-4 text-sm text-gray-900">{{ $detection->branch->branch_name ?? 'N/A' }}</td>
-                <td class="px-6 py-4 text-sm text-gray-900">{{ $detection->device->device_name ?? 'N/A' }}</td>
-                <td class="px-6 py-4 text-sm text-center font-semibold">{{ $detection->detected_count }}</td>
-                <td class="px-6 py-4 text-sm text-gray-500">
-                  @if ($detection->detection_data)
-                    <div x-data="{ showJson: false }">
-                      <x-button size="sm" variant="primary" @click="showJson = !showJson">
-                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                        <span x-text="showJson ? 'Hide JSON' : 'View JSON'"></span>
-                      </x-button>
-                      <div x-show="showJson" x-cloak x-transition class="mt-3">
-                        <pre class="bg-gray-900 text-green-400 p-4 rounded-lg text-xs overflow-x-auto max-w-full">{{ json_encode($detection->detection_data, JSON_PRETTY_PRINT) }}</pre>
-                      </div>
+        <!-- Branch Detection Counts -->
+        <x-card title="Branch Detection Summary" class="mt-6">
+          @if($branchDetectionCounts->count() > 0)
+            <div class="space-y-3">
+              @foreach($branchDetectionCounts as $branch)
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div class="flex-1">
+                    <div class="font-medium text-gray-900">{{ $branch->branch_name }}</div>
+                    <div class="text-sm text-gray-500">{{ $branch->branch_code }}</div>
+                  </div>
+                  <div class="flex items-center space-x-4 text-sm">
+                    <div class="text-center">
+                      <div class="text-xs text-gray-500">Total Count</div>
+                      <x-badge color="blue" size="sm">{{ $branch->total_detected_count }}</x-badge>
                     </div>
-                  @else
-                    <span class="text-gray-400 text-xs">No data</span>
-                  @endif
-                </td>
-              </tr>
-            @empty
-              <tr>
-                <td colspan="5" class="px-6 py-8 text-center text-gray-400">No detections found for this date</td>
-              </tr>
-            @endforelse
-          </tbody>
-        </table>
-      </x-card>
+                    <div class="text-center">
+                      <div class="text-xs text-gray-500">First</div>
+                      <div class="text-gray-600">{{ \Carbon\Carbon::parse($branch->first_detection)->format('H:i') }}</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-gray-500">Last</div>
+                      <div class="text-gray-600">{{ \Carbon\Carbon::parse($branch->last_detection)->format('H:i') }}</div>
+                    </div>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          @else
+            <div class="text-center py-8 text-gray-500">
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <p class="mt-2 text-sm">No branch detections found for this date</p>
+            </div>
+          @endif
+        </x-card>
+      </div>
     </div>
 
     <!-- All Detection Dates -->

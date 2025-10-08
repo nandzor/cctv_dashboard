@@ -92,7 +92,7 @@
 └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘
        │                │                │                │                │                │
        │ 1. Person Detection                            │                │                │
-       │ POST /api/detection/log                        │                │                │
+       │ POST /api/v1/detection/log                     │                │                │
        │ {re_id, branch_id, device_id,  │                │                │                │
        │  detected_count, detection_data, image}        │                │                │
        ├───────────────►│                │                │                │                │
@@ -121,6 +121,9 @@
        │                │                │ - Create/Update re_id_masters   │                │
        │                │                │ - Check status (active/inactive)│                │
        │                │                │ - Update appearance_features    │                │
+       │                │                │ - Update first/last detected timestamps│                │
+       │                │                │ - Increment total_actual_count   │                │
+       │                │                │ - Update total_detection_branch_count│                │
        │                │                ├───────────────►│                │                │
        │                │                │                │                │                │
        │                │                │ 7. Log Detection                │                │
@@ -176,11 +179,13 @@
        │                │                │ 16. WebSocket Broadcast         │                │
        │                │                │ - Real-time dashboard update    │                │
        │                │                │ - Person tracking update        │                │
+       │                │                │ - Branch detection summary update│                │
        │                │                ├─────────────────────────────────────────────────►│
        │                │                │                │                │                │
        │                │                │                │                │ 17. Update UI  │
        │                │                │                │                │ - Increment count│
        │                │                │                │                │ - Show notification│
+       │                │                │                │                │ - Update branch summary│
        │                │                │                │                │◄───────────────┤
 ```
 
@@ -192,6 +197,7 @@
 - ✅ **Retry Mechanism**: Automatic retry with exponential backoff
 - ✅ **Transaction Safety**: Database transactions with rollback
 - ✅ **Real-time Updates**: WebSocket broadcast after completion
+- ✅ **Branch Detection Summary**: Aggregated statistics per branch with MIN/MAX timestamps
 
 ### **3. CCTV Stream Request & Display**
 
@@ -953,6 +959,75 @@ GET /storage/file?path={encrypted_path}
 </button>
 ```
 
+#### **Service Layer Architecture:**
+
+```php
+// app/Services/ReIdMasterService.php
+class ReIdMasterService extends BaseService
+{
+    public function getBranchDetectionCounts(string $reId, string $date)
+    {
+        return DB::table('re_id_branch_detections as rbd')
+            ->join('company_branches as cb', 'rbd.branch_id', '=', 'cb.id')
+            ->where('rbd.re_id', $reId)
+            ->whereDate('rbd.detection_timestamp', $date)
+            ->select(
+                'cb.id as branch_id',
+                'cb.branch_name',
+                'cb.branch_code',
+                DB::raw('COUNT(rbd.id) as detection_count'),
+                DB::raw('SUM(rbd.detected_count) as total_detected_count'),
+                DB::raw('MIN(rbd.detection_timestamp) as first_detection'),
+                DB::raw('MAX(rbd.detection_timestamp) as last_detection')
+            )
+            ->groupBy('cb.id', 'cb.branch_name', 'cb.branch_code')
+            ->orderBy('total_detected_count', 'desc')
+            ->get();
+    }
+}
+```
+
+#### **UI Component Refactoring:**
+
+```html
+<!-- Before: Manual HTML -->
+<div class="bg-white rounded-lg shadow p-6">
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Person Information</h3>
+    <div class="grid grid-cols-2 gap-4">
+        <div class="bg-blue-50 p-4 rounded-lg">
+            <div class="text-sm font-medium text-blue-600">Total Detections</div>
+            <div class="text-2xl font-bold text-blue-900">15</div>
+        </div>
+    </div>
+</div>
+
+<!-- After: Reusable Components -->
+<x-card title="Person Information">
+    <div class="grid grid-cols-2 gap-4">
+        <x-stat-card title="Total Detections" value="15" color="blue" />
+        <x-stat-card title="Branches" value="2" color="green" />
+    </div>
+</x-card>
+
+<!-- Branch Detection Summary -->
+<x-card title="Branch Detection Summary">
+    @foreach($branchDetectionCounts as $branch)
+        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div class="flex-1">
+                <div class="font-medium text-gray-900">{{ $branch->branch_name }}</div>
+                <div class="text-sm text-gray-500">{{ $branch->branch_code }}</div>
+            </div>
+            <div class="flex items-center space-x-4 text-sm">
+                <div class="text-center">
+                    <div class="text-xs text-gray-500">Total Count</div>
+                    <x-badge color="blue" size="sm">{{ $branch->total_detected_count }}</x-badge>
+                </div>
+            </div>
+        </div>
+    @endforeach
+</x-card>
+```
+
 #### **Alpine.js Integration:**
 
 ```html
@@ -996,6 +1071,12 @@ Echo.channel("dashboard").listen("GroupUpdated", (e) => {
   // Alpine.js updates UI
   Alpine.store("groups").refresh();
 });
+
+// Listen for branch detection updates
+Echo.channel("dashboard").listen("BranchDetectionUpdated", (e) => {
+  // Update branch detection summary
+  Alpine.store("branchDetection").refresh();
+});
 ```
 
 #### **Chart.js Integration:**
@@ -1020,6 +1101,71 @@ Echo.channel("dashboard").listen("GroupUpdated", (e) => {
 </script>
 ```
 
+#### **Key Features:**
+
+- ✅ **Reusable Components**: x-button, x-card, x-badge, x-stat-card, x-action-dropdown
+- ✅ **Service Layer**: Business logic separated from controllers
+- ✅ **Branch Detection Summary**: Aggregated statistics per branch
+- ✅ **Real-time Updates**: WebSocket integration with Alpine.js
+- ✅ **DRY Principles**: Consistent use of reusable components
+- ✅ **Performance**: Optimized queries and caching
+
 ---
 
 _These sequence diagrams provide a detailed view of how each major workflow operates within the CCTV Dashboard system using Laravel Blade Templates and Alpine.js, ensuring proper understanding of data flow and system interactions._
+
+## 🆕 Latest Updates (Version 1.3.0)
+
+### **Branch Detection Summary Table**
+- ✅ **Single Column Layout**: Clean card-based design
+- ✅ **Badge Integration**: Total Count displayed with blue badge
+- ✅ **MIN/MAX Timestamps**: First and Last detection times per branch
+- ✅ **Service Layer**: `ReIdMasterService::getBranchDetectionCounts()` method
+- ✅ **Real-time Updates**: WebSocket integration for live updates
+
+### **UI Component Refactoring**
+- ✅ **Reusable Components**: x-button, x-card, x-badge, x-stat-card
+- ✅ **DRY Principles**: Consistent use across all pages
+- ✅ **Service Layer**: Business logic separated from controllers
+- ✅ **Performance**: Optimized queries and caching
+
+### **Person Tracking Enhancements**
+- ✅ **Ordering**: Person Tracking table ordered by `last_detected_at DESC`
+- ✅ **Detection History**: Repositioned below Person Information
+- ✅ **Count Column Removal**: Streamlined table layout
+- ✅ **Branch Detection Counts**: Aggregated statistics per branch
+
+### **Service Layer Architecture**
+- ✅ **ReIdMasterService**: Person tracking and detection management
+- ✅ **WhatsAppSettingsService**: WhatsApp configuration management
+- ✅ **BaseService**: Common service functionality
+- ✅ **Separation of Concerns**: Controllers handle HTTP, services handle business logic
+- ✅ **Reusability**: Services can be used across multiple controllers
+- ✅ **Testability**: Business logic can be unit tested independently
+
+### **Database Optimizations**
+- ✅ **Query Optimization**: Efficient branch detection count queries with JOIN operations
+- ✅ **Data Aggregation**: MIN/MAX timestamps and COUNT/SUM operations per branch
+- ✅ **Index Usage**: Proper indexing for branch detection count queries
+- ✅ **Performance**: Optimized queries and caching in service layer
+
+### **UI/UX Improvements**
+- ✅ **Single Column Layout**: Clean card-based design for branch detection summary
+- ✅ **Badge Integration**: Total Count displayed with blue badge for better visual hierarchy
+- ✅ **Detection History Repositioning**: Moved below Person Information for better flow
+- ✅ **Count Column Removal**: Streamlined table layout for better readability
+- ✅ **Consistent Components**: Reusable Blade components across all pages
+
+### **API Enhancements**
+- ✅ **Branch Detection Data**: Enhanced person detail API with branch detection counts
+- ✅ **Aggregated Statistics**: MIN/MAX detection timestamps per branch
+- ✅ **Performance Optimization**: Efficient database queries with proper indexing
+- ✅ **Response Format**: Consistent JSON structure with meta information
+
+### **Version 1.3.0 Summary**
+- ✅ **Branch Detection Summary Table**: Added to `/re-id-masters/` detail page
+- ✅ **Service Layer Enhancement**: Added `getBranchDetectionCounts()` method
+- ✅ **UI Component Consistency**: Maintained reusable Blade components
+- ✅ **Database Query Optimization**: Efficient JOIN operations and aggregation
+- ✅ **Real-time Updates**: WebSocket integration for live updates
+- ✅ **Performance Improvements**: Optimized queries and caching
