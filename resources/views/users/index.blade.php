@@ -24,8 +24,7 @@
         <div class="flex items-center space-x-4">
           <!-- Per Page Selector -->
           <div class="flex items-center space-x-2">
-            <span class="text-sm text-gray-600">Show:</span>
-            <x-per-page-selector :options="$perPageOptions" :current="$perPage ?? 10" :url="route('users.index')" />
+            <x-per-page-selector :options="$perPageOptions ?? [10, 25, 50, 100]" :current="$perPage ?? 10" :url="route('users.index')" />
           </div>
 
           <!-- Add User Button -->
