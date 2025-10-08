@@ -35,9 +35,11 @@ class CctvLayoutSetting extends Model {
 
     /**
      * Get all position settings for this layout
+     * Ordered by position_number
      */
     public function positions() {
-        return $this->hasMany(CctvPositionSetting::class, 'layout_id');
+        return $this->hasMany(CctvPositionSetting::class, 'layout_id')
+            ->orderBy('position_number', 'asc');
     }
 
     /**

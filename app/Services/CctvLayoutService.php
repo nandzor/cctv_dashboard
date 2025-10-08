@@ -15,7 +15,14 @@ class CctvLayoutService extends BaseService {
     }
 
     public function getLayoutWithPositions(int $layoutId) {
-        return CctvLayoutSetting::with(['positions.branch', 'positions.device', 'creator'])
+        return CctvLayoutSetting::with([
+            'positions' => function ($query) {
+                $query->orderBy('position_number', 'asc');
+            },
+            'positions.branch',
+            'positions.device',
+            'creator'
+        ])
             ->find($layoutId);
     }
 
@@ -27,7 +34,11 @@ class CctvLayoutService extends BaseService {
                 $layout->positions()->create($position);
             }
 
-            return $layout->load('positions');
+            return $layout->load([
+                'positions' => function ($query) {
+                    $query->orderBy('position_number', 'asc');
+                }
+            ]);
         });
     }
 
@@ -52,7 +63,13 @@ class CctvLayoutService extends BaseService {
     }
 
     public function getDefaultLayout() {
-        return CctvLayoutSetting::with('positions.branch', 'positions.device')
+        return CctvLayoutSetting::with([
+            'positions' => function ($query) {
+                $query->orderBy('position_number', 'asc');
+            },
+            'positions.branch',
+            'positions.device'
+        ])
             ->where('is_default', true)
             ->where('is_active', true)
             ->first();
