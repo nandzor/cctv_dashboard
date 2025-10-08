@@ -78,10 +78,16 @@ class EventLogSeeder extends Seeder {
                 // Generate event data based on type
                 $eventData = $this->generateEventData($eventType);
 
-                // Notification flags
+                // Notification flags - Updated logic for better realism
                 $notificationSent = $eventType === 'alert' ? (rand(1, 100) > 20) : false; // 80% alerts sent
                 $messageSent = $notificationSent && (rand(1, 100) > 30); // 70% of notifications include message
                 $imageSent = $notificationSent && (rand(1, 100) > 40); // 60% of notifications include image
+
+                // Generate image path with new folder structure
+                $imagePath = null;
+                if ($imageSent) {
+                    $imagePath = $this->generateImagePath($eventTimestamp, $device->device_id);
+                }
 
                 EventLog::create([
                     'branch_id' => $branch->id,
@@ -89,7 +95,7 @@ class EventLogSeeder extends Seeder {
                     're_id' => $reId,
                     'event_type' => $eventType,
                     'detected_count' => $this->getDetectedCount($eventType),
-                    'image_path' => $imageSent ? $this->generateImagePath($eventTimestamp, $device->device_id) : null,
+                    'image_path' => $imagePath,
                     'image_sent' => $imageSent,
                     'message_sent' => $messageSent,
                     'notification_sent' => $notificationSent,
@@ -203,13 +209,13 @@ class EventLogSeeder extends Seeder {
     }
 
     /**
-     * Generate image path
+     * Generate image path with new folder structure
      */
     private function generateImagePath(Carbon $timestamp, string $deviceId): string {
-        $date = $timestamp->format('Y/m/d');
+        $folderName = 'whatsapp_detection_' . $timestamp->format('d-m-Y');
         $filename = $timestamp->format('His') . '_' . $deviceId . '_' . uniqid() . '.jpg';
 
-        return "events/{$date}/{$filename}";
+        return "{$folderName}/{$filename}";
     }
 
     /**

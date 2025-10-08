@@ -53,8 +53,9 @@ class ReIdBranchDetectionSeeder extends Seeder {
             $baseTime = Carbon::parse($data['detection_time']);
             $branchesCount = $data['branches_count'];
             $detectionsCount = $data['detections_count'];
+            $detectionDate = $data['detection_date'] ?? $baseTime->toDateString();
 
-            // Select random branches for this person
+            // Select random branches for this person (ensure we don't exceed available branches)
             $selectedBranches = $branches->random(min($branchesCount, $branches->count()));
 
             foreach ($selectedBranches as $branch) {
@@ -72,18 +73,28 @@ class ReIdBranchDetectionSeeder extends Seeder {
                     // Spread detections over time (within the same day)
                     $detectionTimestamp = $baseTime->copy()->addMinutes($i * rand(5, 30));
 
+                    // Ensure detection is within the same day
+                    if ($detectionTimestamp->toDateString() !== $detectionDate) {
+                        $detectionTimestamp = Carbon::parse($detectionDate)->addHours(rand(6, 20))->addMinutes(rand(0, 59));
+                    }
+
                     ReIdBranchDetection::create([
                         're_id' => $reId,
                         'branch_id' => $branch->id,
                         'device_id' => $device->device_id,
                         'detection_timestamp' => $detectionTimestamp,
-                        'detected_count' => 1,
+                        'detected_count' => rand(1, 3), // More realistic detected count
                         'detection_data' => [
                             'confidence' => rand(85, 99) / 100,
                             'frame_number' => rand(1000, 9999),
                             'camera_angle' => rand(0, 360),
                             'lighting_condition' => ['good', 'moderate', 'low'][rand(0, 2)],
                             'distance_meters' => rand(2, 15),
+                            'appearance_features' => [
+                                'gender' => ['male', 'female'][rand(0, 1)],
+                                'age_group' => ['young', 'adult', 'senior'][rand(0, 2)],
+                                'clothing' => ['formal', 'casual', 'sport'][rand(0, 2)],
+                            ],
                         ],
                     ]);
 
@@ -128,5 +139,25 @@ class ReIdBranchDetectionSeeder extends Seeder {
         $this->command->info('Total detections: ' . $trend->sum('count'));
         $this->command->info('Average per day: ' . round($trend->avg('count'), 1));
         $this->command->info('Peak day: ' . $trend->max('count') . ' detections');
+
+        // Show branch detection summary
+        $this->command->info('');
+        $this->command->info('=== Branch Detection Summary ===');
+
+        $branchStats = ReIdBranchDetection::join('company_branches', 're_id_branch_detections.branch_id', '=', 'company_branches.id')
+            ->selectRaw('company_branches.branch_name, COUNT(*) as detection_count, SUM(detected_count) as total_detected_count')
+            ->where('re_id_branch_detections.detection_timestamp', '>=', now()->subDays(7)->startOfDay())
+            ->groupBy('company_branches.id', 'company_branches.branch_name')
+            ->orderBy('detection_count', 'desc')
+            ->get();
+
+        foreach ($branchStats as $branch) {
+            $this->command->info(sprintf(
+                '  %-20s: %d detections, %d total count',
+                $branch->branch_name,
+                $branch->detection_count,
+                $branch->total_detected_count
+            ));
+        }
     }
 }

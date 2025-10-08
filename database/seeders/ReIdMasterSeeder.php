@@ -60,6 +60,10 @@ class ReIdMasterSeeder extends Seeder {
                 $reId = 'REID_' . $date->format('Ymd') . '_' . str_pad($j + 1, 4, '0', STR_PAD_LEFT);
                 $detectionTime = $date->copy()->addHours(rand(6, 20))->addMinutes(rand(0, 59));
 
+                // Generate realistic detection counts
+                $totalActualCount = rand(1, 10);
+                $totalDetectionBranchCount = rand(1, min(3, $branches->count()));
+
                 $person = ReIdMaster::create([
                     're_id' => $reId,
                     'detection_date' => $date->toDateString(),
@@ -68,16 +72,17 @@ class ReIdMasterSeeder extends Seeder {
                     'appearance_features' => $features[array_rand($features)],
                     'first_detected_at' => $detectionTime,
                     'last_detected_at' => $detectionTime->copy()->addHours(rand(0, 3)),
-                    'total_detection_branch_count' => rand(1, 3),
-                    'total_actual_count' => rand(1, 10),
+                    'total_detection_branch_count' => $totalDetectionBranchCount,
+                    'total_actual_count' => $totalActualCount,
                     'status' => 'active',
                 ]);
 
                 $reIds[] = [
                     're_id' => $reId,
                     'detection_time' => $detectionTime,
-                    'branches_count' => $person->total_detection_branch_count,
-                    'detections_count' => $person->total_actual_count,
+                    'branches_count' => $totalDetectionBranchCount,
+                    'detections_count' => $totalActualCount,
+                    'detection_date' => $date->toDateString(),
                 ];
             }
         }
