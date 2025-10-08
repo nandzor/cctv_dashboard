@@ -15,6 +15,39 @@
 
   @vite(['resources/css/app.css', 'resources/js/app.js'])
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    /* Professional Sidebar Scrollbar */
+    #sidebar-nav::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #sidebar-nav::-webkit-scrollbar-track {
+      background: rgba(31, 41, 55, 0.3);
+      border-radius: 10px;
+    }
+
+    #sidebar-nav::-webkit-scrollbar-thumb {
+      background: rgba(75, 85, 99, 0.5);
+      border-radius: 10px;
+      transition: background 0.2s ease;
+    }
+
+    #sidebar-nav::-webkit-scrollbar-thumb:hover {
+      background: rgba(107, 114, 128, 0.7);
+    }
+
+    /* Firefox */
+    #sidebar-nav {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(75, 85, 99, 0.5) rgba(31, 41, 55, 0.3);
+    }
+
+    /* Smooth scrolling */
+    #sidebar-nav {
+      scroll-behavior: smooth;
+    }
+  </style>
 </head>
 
 <body class="bg-gray-50">
@@ -26,7 +59,7 @@
         <h1 class="text-xl font-bold">{{ config('app.name') }}</h1>
       </div>
 
-      <nav class="mt-8 px-4 space-y-1 overflow-y-auto" style="max-height: calc(100vh - 240px);">
+      <nav id="sidebar-nav" class="mt-8 px-4 space-y-1 overflow-y-auto pr-2" style="max-height: calc(100vh - 240px);">
         <!-- Dashboard -->
         <x-sidebar-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
           <x-sidebar-icon :icon="'<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6\' />'" />
@@ -176,6 +209,94 @@
   </div>
 
   @stack('scripts')
+
+  <script>
+    (() => {
+      'use strict';
+
+      const SidebarScroll = {
+        config: {
+          navId: 'sidebar-nav',
+          activeClass: 'bg-gray-800',
+          scrollDelay: 100,
+          mobileScrollDelay: 320,
+          visibilityBuffer: 80
+        },
+
+        /**
+         * Check if element is visible in scrollable container
+         */
+        isElementVisible(element, container) {
+          const containerTop = container.scrollTop;
+          const containerBottom = containerTop + container.clientHeight;
+          const elementTop = element.offsetTop;
+          const elementBottom = elementTop + element.offsetHeight;
+
+          return (
+            elementTop >= containerTop + this.config.visibilityBuffer &&
+            elementBottom <= containerBottom - this.config.visibilityBuffer
+          );
+        },
+
+        /**
+         * Scroll to active menu item
+         */
+        scrollToActive(delay = this.config.scrollDelay) {
+          const nav = document.getElementById(this.config.navId);
+          const activeLink = nav?.querySelector(`a.${this.config.activeClass}`);
+
+          if (!activeLink || !nav) return;
+
+          setTimeout(() => {
+            // Only scroll if not already visible
+            if (!this.isElementVisible(activeLink, nav)) {
+              activeLink.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest'
+              });
+            }
+          }, delay);
+        },
+
+        /**
+         * Initialize sidebar scroll
+         */
+        init() {
+          // Auto-scroll on page load
+          this.scrollToActive();
+        }
+      };
+
+      const SidebarToggle = {
+        /**
+         * Initialize sidebar toggle
+         */
+        init() {
+          const toggle = document.getElementById('sidebarToggle');
+          const sidebar = document.getElementById('sidebar');
+
+          if (!toggle || !sidebar) return;
+
+          toggle.addEventListener('click', () => {
+            const isOpening = sidebar.classList.contains('-translate-x-full');
+            sidebar.classList.toggle('-translate-x-full');
+
+            // Scroll to active when opening sidebar
+            if (isOpening) {
+              SidebarScroll.scrollToActive(SidebarScroll.config.mobileScrollDelay);
+            }
+          });
+        }
+      };
+
+      document.addEventListener('DOMContentLoaded', () => {
+        SidebarScroll.init();
+        SidebarToggle.init();
+      });
+
+    })();
+  </script>
 </body>
 
 </html>
