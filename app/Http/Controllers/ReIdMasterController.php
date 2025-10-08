@@ -7,6 +7,8 @@ use App\Services\ReIdMasterService;
 use App\Services\BaseExportService;
 use App\Exports\ReIdMastersExport;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class ReIdMasterController extends Controller {
     protected $reIdMasterService;
@@ -34,12 +36,37 @@ class ReIdMasterController extends Controller {
         if ($dateFrom && $dateTo) {
             $persons = $this->reIdMasterService->getByDateRange($dateFrom, $dateTo, $filters);
             $statistics = $this->reIdMasterService->getStatistics(['date' => $dateFrom]);
+
+            // Convert Collection to Paginator for consistent view handling
+            $persons = $this->paginateCollection($persons, $perPage, $request);
         } else {
             $persons = $this->reIdMasterService->getPaginate($search, $perPage, $filters);
             $statistics = $this->reIdMasterService->getStatistics();
         }
 
         return view('re-id-masters.index', compact('persons', 'statistics', 'search', 'perPage', 'branchId'));
+    }
+
+    /**
+     * Convert Collection to Paginator for consistent view handling
+     */
+    private function paginateCollection($collection, $perPage, Request $request): LengthAwarePaginator {
+        $currentPage = $request->get('page', 1);
+        $currentPage = max(1, (int) $currentPage);
+
+        $total = $collection->count();
+        $items = $collection->forPage($currentPage, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'pageName' => 'page',
+            ]
+        );
     }
 
     /**

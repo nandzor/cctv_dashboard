@@ -66,48 +66,31 @@
         <!-- Detection History -->
         <div class="mt-6">
           <x-card title="Detection History ({{ $date }})" :padding="false">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Device</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200" x-data="{}">
-                @forelse($person->branchDetections as $detection)
-                  <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 text-sm text-gray-900">
-                      {{ \Carbon\Carbon::parse($detection->detection_timestamp)->format('H:i:s') }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ $detection->branch->branch_name ?? 'N/A' }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ $detection->device->device_name ?? 'N/A' }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-500">
-                      @if ($detection->detection_data)
-                        <div x-data="{ showJson: false }">
-                          <x-button size="sm" variant="primary" @click="showJson = !showJson">
-                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                            <span x-text="showJson ? 'Hide JSON' : 'View JSON'"></span>
-                          </x-button>
-                          <div x-show="showJson" x-cloak x-transition class="mt-3">
-                            <pre class="bg-gray-900 text-green-400 p-4 rounded-lg text-xs overflow-x-auto max-w-full">{{ json_encode($detection->detection_data, JSON_PRETTY_PRINT) }}</pre>
-                          </div>
-                        </div>
-                      @else
-                        <span class="text-gray-400 text-xs">No data</span>
-                      @endif
-                    </td>
-                  </tr>
-                @empty
-                  <tr>
-                    <td colspan="4" class="px-6 py-8 text-center text-gray-400">No detections found for this date</td>
-                  </tr>
-                @endforelse
-              </tbody>
-            </table>
+            <x-client-pagination 
+              :items="$person->branchDetections->map(function($detection) {
+                return [
+                  'id' => $detection->id,
+                  'detection_timestamp' => $detection->detection_timestamp,
+                  'branch_name' => $detection->branch->branch_name ?? null,
+                  'device_name' => $detection->device->device_name ?? null,
+                  'detection_data' => $detection->detection_data
+                ];
+              })"
+              :per-page-options="[5, 10, 20, 50]"
+              :default-per-page="10"
+              :max-visible-pages="5"
+              item-name="detections"
+              empty-message="No detections found for this date"
+              storage-key="detection_history_per_page"
+            >
+              <x-detection-history-table 
+                :detections="$person->branchDetections"
+                :show-json-data="true"
+                :show-branch-name="true"
+                :show-device-name="true"
+                :show-timestamp="true"
+              />
+            </x-client-pagination>
           </x-card>
         </div>
       </div>
@@ -189,3 +172,7 @@
     </div>
   </div>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/client-pagination.js') }}"></script>
+@endpush
