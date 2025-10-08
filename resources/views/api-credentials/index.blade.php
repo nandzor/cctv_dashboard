@@ -91,20 +91,39 @@
                     {{ ucfirst($credential->status) }}
                   </x-badge>
                 </td>
-                <td class="px-6 py-4 text-right">
-                  <div class="flex justify-end space-x-2">
-                    <x-button variant="primary" size="sm" :href="route('api-credentials.show', $credential)">
-                      View
-                    </x-button>
-                    <x-button variant="warning" size="sm" :href="route('api-credentials.edit', $credential)">
-                      Edit
-                    </x-button>
-                  </div>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <x-action-dropdown>
+                    <x-dropdown-link :href="route('api-credentials.show', $credential)">
+                      👁️ View Details
+                    </x-dropdown-link>
+
+                    <x-dropdown-link :href="route('api-credentials.test', $credential)">
+                      🧪 Test API
+                    </x-dropdown-link>
+
+                    <x-dropdown-divider />
+
+                    <x-dropdown-link :href="route('api-credentials.edit', $credential)">
+                      ✏️ Edit Credential
+                    </x-dropdown-link>
+
+                    <x-dropdown-divider />
+
+                    <x-dropdown-button type="button" onclick="confirmDelete({{ $credential->id }})" variant="danger">
+                      🗑️ Delete Credential
+                    </x-dropdown-button>
+
+                    <form id="delete-form-{{ $credential->id }}"
+                      action="{{ route('api-credentials.destroy', $credential) }}" method="POST" class="hidden">
+                      @csrf
+                      @method('DELETE')
+                    </form>
+                  </x-action-dropdown>
                 </td>
               </tr>
             @empty
               <tr>
-                <td colspan="7" class="px-6 py-12 text-center text-gray-400">
+                <td colspan="6" class="px-6 py-12 text-center text-gray-400">
                   <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
@@ -132,4 +151,14 @@
       @endif
     </x-card>
   </div>
+
+  <script>
+    function confirmDelete(credentialId) {
+      if (confirm(
+          'Are you sure you want to delete this API credential?\n\nThis action cannot be undone and will immediately revoke API access.'
+        )) {
+        document.getElementById('delete-form-' + credentialId).submit();
+      }
+    }
+  </script>
 @endsection
