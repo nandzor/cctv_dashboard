@@ -163,7 +163,7 @@
         </div>
         @if ($hasRecentEvents)
           <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
-            <a href="#" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+            <a href="{{ route('event-logs.index') }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
               View all events →
             </a>
           </div>
