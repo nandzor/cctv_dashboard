@@ -41,28 +41,42 @@ class ApiCredential extends Model {
      * Get the decrypted API key
      */
     public function getApiKeyAttribute($value) {
-        return EncryptionHelper::decrypt($value);
+        if ($value) {
+            return EncryptionHelper::decrypt($value);
+        }
+        return $value;
     }
 
     /**
      * Set the encrypted API key
      */
     public function setApiKeyAttribute($value) {
-        $this->attributes['api_key'] = EncryptionHelper::encrypt($value);
+        if ($value) {
+            $this->attributes['api_key'] = EncryptionHelper::encrypt($value);
+        } else {
+            $this->attributes['api_key'] = $value;
+        }
     }
 
     /**
      * Get the decrypted API secret
      */
     public function getApiSecretAttribute($value) {
-        return EncryptionHelper::decrypt($value);
+        if ($value) {
+            return EncryptionHelper::decrypt($value);
+        }
+        return $value;
     }
 
     /**
      * Set the encrypted API secret
      */
     public function setApiSecretAttribute($value) {
-        $this->attributes['api_secret'] = EncryptionHelper::encrypt($value);
+        if ($value) {
+            $this->attributes['api_secret'] = EncryptionHelper::encrypt($value);
+        } else {
+            $this->attributes['api_secret'] = $value;
+        }
     }
 
     /**
@@ -177,26 +191,64 @@ class ApiCredential extends Model {
     }
 
     /**
-     * Get decrypted API key for display (only show first 8 and last 4 characters)
+     * Get decrypted API key for display (show first 8 characters + dots)
      */
     public function getMaskedApiKeyAttribute() {
         $apiKey = $this->api_key;
-        if (strlen($apiKey) <= 12) {
+
+        // If decryption failed or empty, try to get raw value
+        if (empty($apiKey)) {
+            $rawValue = $this->getRawOriginal('api_key');
+            if (!empty($rawValue)) {
+                // Try to decrypt raw value
+                try {
+                    $apiKey = EncryptionHelper::decrypt($rawValue);
+                } catch (\Exception $e) {
+                    // If decryption fails, show masked raw value
+                    return substr($rawValue, 0, 8) . '....';
+                }
+            }
+        }
+
+        if (empty($apiKey)) {
+            return '****....';
+        }
+
+        if (strlen($apiKey) <= 8) {
             return str_repeat('*', strlen($apiKey));
         }
 
-        return substr($apiKey, 0, 8) . str_repeat('*', strlen($apiKey) - 12) . substr($apiKey, -4);
+        return substr($apiKey, 0, 8) . '....';
     }
 
     /**
-     * Get decrypted API secret for display (only show first 4 and last 4 characters)
+     * Get decrypted API secret for display (show first 8 characters + dots)
      */
     public function getMaskedApiSecretAttribute() {
         $apiSecret = $this->api_secret;
+
+        // If decryption failed or empty, try to get raw value
+        if (empty($apiSecret)) {
+            $rawValue = $this->getRawOriginal('api_secret');
+            if (!empty($rawValue)) {
+                // Try to decrypt raw value
+                try {
+                    $apiSecret = EncryptionHelper::decrypt($rawValue);
+                } catch (\Exception $e) {
+                    // If decryption fails, show masked raw value
+                    return substr($rawValue, 0, 8) . '....';
+                }
+            }
+        }
+
+        if (empty($apiSecret)) {
+            return '****....';
+        }
+
         if (strlen($apiSecret) <= 8) {
             return str_repeat('*', strlen($apiSecret));
         }
 
-        return substr($apiSecret, 0, 4) . str_repeat('*', strlen($apiSecret) - 8) . substr($apiSecret, -4);
+        return substr($apiSecret, 0, 8) . '....';
     }
 }

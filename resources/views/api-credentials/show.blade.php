@@ -81,7 +81,7 @@
               <dd class="mt-1">
                 <div class="flex items-center space-x-2">
                   <code
-                    class="flex-1 text-xs bg-gray-900 text-green-400 p-3 rounded font-mono break-all">{{ $apiCredential->api_key }}</code>
+                    class="flex-1 text-xs bg-gray-900 text-green-400 p-3 rounded font-mono break-all">{{ $apiCredential->masked_api_key }}</code>
                   <button onclick="copyToClipboard('{{ $apiCredential->api_key }}')"
                     class="text-blue-600 hover:text-blue-800 flex-shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,6 +90,7 @@
                     </svg>
                   </button>
                 </div>
+                <p class="mt-1 text-xs text-gray-500">Click copy button to get full API key</p>
               </dd>
             </div>
 

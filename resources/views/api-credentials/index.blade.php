@@ -72,7 +72,7 @@
                   <div class="text-xs text-gray-500">Created {{ $credential->created_at->diffForHumans() }}</div>
                 </td>
                 <td class="px-6 py-4">
-                  <code class="text-xs bg-gray-100 px-2 py-1 rounded">{{ Str::limit($credential->api_key, 30) }}</code>
+                  <code class="text-xs bg-gray-100 px-2 py-1 rounded">{{ $credential->masked_api_key }}</code>
                 </td>
                 <td class="px-6 py-4 text-sm text-center">
                   <x-badge variant="info" size="sm">Global Access</x-badge>
