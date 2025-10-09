@@ -71,6 +71,7 @@
               placeholder="All Branches" />
           </div>
 
+
           <!-- Action Button -->
           <x-button type="submit" variant="primary" size="md" class="w-full md:w-auto">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,8 +91,19 @@
       <x-stat-card title="Total Events" :value="number_format($monthlyStats['total_events'])" icon="chart-bar" color="orange" />
     </div>
 
-    <!-- Monthly Report Table -->
-    <x-card title="Monthly Report for {{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}" :padding="false">
+    <!-- Monthly Report Table with Server-Side Pagination -->
+    <x-card :padding="false">
+      <!-- Card Header with Per-Page Selector -->
+      <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">Monthly Report for {{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}</h3>
+          </div>
+          <div class="mt-3 sm:mt-0">
+            <x-per-page-selector :options="$perPageOptions ?? [10, 25, 50, 100]" :current="$perPage ?? 25" :url="route('reports.monthly')" type="server" />
+          </div>
+        </div>
+      </div>
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200" id="monthly-report-table">
           <thead class="bg-gray-50">
@@ -109,40 +121,21 @@
             @forelse($reports as $report)
               <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                  {{ \Carbon\Carbon::parse($report->report_date)->format('M d, Y') }}
-                  <span class="text-xs text-gray-500 block">
-                    {{ \Carbon\Carbon::parse($report->report_date)->format('l') }}
-                  </span>
+                  <span>{{ \Carbon\Carbon::parse($report->report_date)->format('M d, Y') }}</span>
+                  <span class="text-xs text-gray-500 block">{{ \Carbon\Carbon::parse($report->report_date)->format('l') }}</span>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-900">
-                  {{ $report->branch->branch_name ?? 'Overall' }}
-                  @if ($report->branch)
+                  <span>{{ $report->branch ? $report->branch->branch_name : 'Overall' }}</span>
+                  @if($report->branch && $report->branch->city)
                     <span class="text-xs text-gray-500 block">{{ $report->branch->city }}</span>
                   @endif
                 </td>
-                <td class="px-6 py-4 text-sm text-center font-semibold text-blue-600">
-                  {{ $report->total_devices }}
-                </td>
-                <td class="px-6 py-4 text-sm text-center font-semibold text-purple-600">
-                  {{ number_format($report->total_detections) }}
-                </td>
-                <td class="px-6 py-4 text-sm text-center font-semibold text-orange-600">
-                  {{ number_format($report->total_events) }}
-                </td>
-                <td class="px-6 py-4 text-sm text-center font-semibold text-green-600">
-                  {{ $report->unique_person_count }}
-                </td>
-                <td class="px-6 py-4 text-sm text-right font-semibold text-gray-900">
-                  {{ number_format($report->total_detections / max($report->total_devices, 1), 1) }}
-                </td>
+                <td class="px-6 py-4 text-sm text-center font-semibold text-blue-600">{{ number_format($report->total_devices) }}</td>
+                <td class="px-6 py-4 text-sm text-center font-semibold text-purple-600">{{ number_format($report->total_detections) }}</td>
+                <td class="px-6 py-4 text-sm text-center font-semibold text-orange-600">{{ number_format($report->total_events) }}</td>
+                <td class="px-6 py-4 text-sm text-center font-semibold text-green-600">{{ number_format($report->unique_person_count) }}</td>
+                <td class="px-6 py-4 text-sm text-right font-semibold text-gray-900">{{ number_format($report->total_detections / max($report->total_devices, 1), 1) }}</td>
               </tr>
-              @php
-                $date = \Carbon\Carbon::parse($report->report_date)->format('Y-m-d');
-                if (!isset($dailyDetections[$date])) {
-                    $dailyDetections[$date] = 0;
-                }
-                $dailyDetections[$date] += $report->total_detections;
-              @endphp
             @empty
               <tr>
                 <td colspan="7" class="px-6 py-8 text-center text-gray-400">
@@ -152,29 +145,43 @@
             @endforelse
           </tbody>
 
-          @if ($reports->isNotEmpty())
+          @if($reports->isNotEmpty())
+            <!-- Monthly Total Footer -->
             <tfoot class="bg-gray-100 font-bold">
               <tr>
                 <td colspan="2" class="px-6 py-4 text-sm text-gray-900">Monthly Total</td>
-                <td class="px-6 py-4 text-sm text-center text-blue-600">
-                  {{ $totalDevices }}
-                </td>
-                <td class="px-6 py-4 text-sm text-center text-purple-600">
-                  {{ number_format($monthlyStats['total_detections']) }}
-                </td>
-                <td class="px-6 py-4 text-sm text-center text-orange-600">
-                  {{ number_format($monthlyStats['total_events']) }}
-                </td>
-                <td class="px-6 py-4 text-sm text-center text-green-600">
-                  {{ $monthlyStats['unique_persons'] }}
-                </td>
-                <td class="px-6 py-4 text-sm text-right text-gray-900">
-                  {{ number_format($avgDetectionsPerDay, 1) }}
-                </td>
+                <td class="px-6 py-4 text-sm text-center text-blue-600">{{ number_format($reports->sum('total_devices')) }}</td>
+                <td class="px-6 py-4 text-sm text-center text-purple-600">{{ number_format($reports->sum('total_detections')) }}</td>
+                <td class="px-6 py-4 text-sm text-center text-orange-600">{{ number_format($reports->sum('total_events')) }}</td>
+                <td class="px-6 py-4 text-sm text-center text-green-600">{{ number_format($reports->max('unique_person_count')) }}</td>
+                <td class="px-6 py-4 text-sm text-right text-gray-900">{{ number_format($reports->sum('total_detections') / max($reports->sum('total_devices'), 1), 1) }}</td>
               </tr>
             </tfoot>
           @endif
         </table>
+      </div>
+
+      <!-- Pagination Info and Controls -->
+      <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div class="text-sm text-gray-700">
+            Showing
+            <span class="font-medium">{{ $reports->firstItem() ?? 0 }}</span>
+            to
+            <span class="font-medium">{{ $reports->lastItem() ?? 0 }}</span>
+            of
+            <span class="font-medium">{{ $reports->total() }}</span>
+            results
+            @if (request()->has('branch_id'))
+              for branch "<span class="font-medium text-blue-600">{{ $branches->where('id', request()->get('branch_id'))->first()->branch_name ?? 'Unknown' }}</span>"
+            @endif
+          </div>
+
+          <!-- Pagination Controls -->
+          @if ($reports->hasPages())
+            <x-pagination :paginator="$reports" />
+          @endif
+        </div>
       </div>
     </x-card>
 
@@ -278,3 +285,5 @@
   </div>
 
 @endsection
+
+

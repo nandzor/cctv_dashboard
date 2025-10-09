@@ -24,7 +24,7 @@
         <div class="flex items-center space-x-4">
           <!-- Per Page Selector -->
           <div class="flex items-center space-x-2">
-            <x-per-page-selector :options="$perPageOptions ?? [10, 25, 50, 100]" :current="$perPage ?? 10" :url="route('company-groups.index')" />
+            <x-per-page-selector :options="$perPageOptions ?? [10, 25, 50, 100]" :current="$perPage ?? 10" :url="route('company-groups.index')" type="server" />
           </div>
 
           <!-- Add Group Button -->

@@ -9,6 +9,7 @@ use App\Exports\DailyReportsExport;
 use App\Exports\MonthlyReportsExport;
 use App\Exports\DashboardReportExport;
 use App\Services\BaseExportService;
+use App\Services\ReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -16,9 +17,11 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller {
     protected $exportService;
+    protected $reportService;
 
-    public function __construct(BaseExportService $exportService) {
+    public function __construct(BaseExportService $exportService, ReportService $reportService) {
         $this->exportService = $exportService;
+        $this->reportService = $reportService;
     }
 
     public function dashboard(Request $request) {
@@ -201,61 +204,8 @@ class ReportController extends Controller {
     }
 
     public function monthly(Request $request) {
-        $month = $request->input('month', now()->format('Y-m'));
-        $branchId = $request->input('branch_id');
-
-        $startDate = \Carbon\Carbon::parse($month . '-01')->startOfMonth();
-        $endDate = \Carbon\Carbon::parse($month . '-01')->endOfMonth();
-
-        $query = CountingReport::where('report_type', 'daily')
-            ->whereBetween('report_date', [$startDate, $endDate]);
-
-        if ($branchId) {
-            $query->where('branch_id', $branchId);
-        }
-
-        $reports = $query->with('branch')->orderBy('report_date')->get();
-        $branches = CompanyBranch::active()->get();
-
-        // Aggregate monthly stats
-        $monthlyStats = [
-            'total_detections' => $reports->sum('total_detections'),
-            'unique_persons' => $reports->max('unique_person_count'),
-            'total_events' => $reports->sum('total_events'),
-        ];
-
-        // Additional calculations for view
-        $groupedReports = $reports->groupBy('branch_id');
-        $totalDevices = $reports->unique('branch_id')->sum(function ($r) {
-            return $r->total_devices;
-        });
-        $avgDetectionsPerDay = $monthlyStats['total_detections'] / max($reports->count(), 1);
-
-        // Branch statistics
-        $branchStats = $reports->groupBy('branch_id')->map(function ($items) {
-            return [
-                'branch' => $items->first()->branch,
-                'total_detections' => $items->sum('total_detections'),
-                'total_events' => $items->sum('total_events'),
-                'unique_persons' => $items->max('unique_person_count'),
-                'avg_per_day' => $items->avg('total_detections'),
-            ];
-        });
-
-        $maxBranchDetections = $branchStats->max('total_detections') ?: 1;
-
-        return view('reports.monthly', compact(
-            'reports',
-            'branches',
-            'month',
-            'branchId',
-            'monthlyStats',
-            'groupedReports',
-            'totalDevices',
-            'avgDetectionsPerDay',
-            'branchStats',
-            'maxBranchDetections'
-        ));
+        $data = $this->reportService->getMonthlyReports($request);
+        return view('reports.monthly', $data);
     }
 
     public function exportMonthly(Request $request) {

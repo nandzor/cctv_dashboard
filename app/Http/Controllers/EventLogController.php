@@ -6,31 +6,43 @@ use App\Models\EventLog;
 use App\Models\CompanyBranch;
 use App\Exports\EventLogsExport;
 use App\Services\BaseExportService;
+use App\Services\EventLogService;
 use Illuminate\Http\Request;
 
 class EventLogController extends Controller {
     protected $exportService;
+    protected $eventLogService;
 
-    public function __construct(BaseExportService $exportService) {
+    public function __construct(BaseExportService $exportService, EventLogService $eventLogService) {
         $this->exportService = $exportService;
+        $this->eventLogService = $eventLogService;
     }
 
     public function index(Request $request) {
-        $query = EventLog::with(['branch', 'device', 'reIdMaster']);
+        $search = $request->input('search');
+        $perPage = $request->input('per_page', 10);
+        $eventType = $request->input('event_type');
+        $branchId = $request->input('branch_id');
 
-        // Apply filters
-        if ($request->filled('event_type')) {
-            $query->where('event_type', $request->event_type);
-        }
+        $filters = [];
+        if ($eventType) $filters['event_type'] = $eventType;
+        if ($branchId) $filters['branch_id'] = $branchId;
 
-        if ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
-        }
+        $events = $this->eventLogService->getPaginatedEventLogs($search, $perPage, $filters);
+        $statistics = $this->eventLogService->getStatistics();
+        $branches = CompanyBranch::active()->orderBy('branch_name')->get();
+        $perPageOptions = $this->eventLogService->getPerPageOptions();
 
-        $events = $query->latest('created_at')->paginate(20);
-        $branches = CompanyBranch::active()->get();
-
-        return view('event-logs.index', compact('events', 'branches'));
+        return view('event-logs.index', compact(
+            'events',
+            'statistics',
+            'branches',
+            'search',
+            'perPage',
+            'eventType',
+            'branchId',
+            'perPageOptions'
+        ));
     }
 
     public function show(EventLog $eventLog) {

@@ -211,7 +211,7 @@ abstract class BaseService
      */
     protected function validatePerPage(int $perPage): int
     {
-        $allowedPerPage = [10, 20, 50, 100];
+        $allowedPerPage = [10, 25, 50, 100];
 
         if (!in_array($perPage, $allowedPerPage)) {
             return 10; // Default fallback
@@ -227,12 +227,7 @@ abstract class BaseService
      */
     public function getPerPageOptions(): array
     {
-        return [
-            10 => '10 per page',
-            20 => '20 per page',
-            50 => '50 per page',
-            100 => '100 per page'
-        ];
+        return [10, 25, 50, 100];
     }
 }
 

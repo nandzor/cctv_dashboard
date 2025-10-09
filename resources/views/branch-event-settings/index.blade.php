@@ -42,7 +42,7 @@
 
           <!-- Per Page Selector -->
           <div class="flex items-center space-x-2">
-            <x-per-page-selector :options="[10, 25, 50, 100]" :current="$perPage ?? 10" :url="route('branch-event-settings.index')" />
+            <x-per-page-selector :options="[10, 25, 50, 100]" :current="$perPage ?? 10" :url="route('branch-event-settings.index')" type="server" />
           </div>
         </div>
       </div>
