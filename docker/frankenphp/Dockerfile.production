@@ -24,7 +24,7 @@ WORKDIR /app
 COPY . .
 
 # Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Install Composer dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction

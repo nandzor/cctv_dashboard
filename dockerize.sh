@@ -114,7 +114,7 @@ services:
       - POSTGRES_PASSWORD=kambin
       - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cctv_user -d cctv_dashboard"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cctv_dashboard"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -194,7 +194,7 @@ services:
       - POSTGRES_PASSWORD=kambin
       - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cctv_user -d cctv_dashboard"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cctv_dashboard"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -227,13 +227,15 @@ services:
     environment:
       - NODE_ENV=development
       - VITE_APP_URL=http://localhost:9001
+      - VITE_DEV_SERVER_HOST=0.0.0.0
+      - VITE_DEV_SERVER_PORT=5173
     working_dir: /app
     command: >
       sh -c "
         echo 'Installing dependencies...' &&
         npm ci &&
         echo 'Starting Vite development server...' &&
-        npm run dev -- --host 0.0.0.0 --port 5173
+        npm run dev
       "
 
 volumes:
@@ -278,7 +280,7 @@ WORKDIR /app
 COPY . .
 
 # Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Install Composer dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
@@ -339,7 +341,7 @@ WORKDIR /app
 COPY . .
 
 # Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Install Composer dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
