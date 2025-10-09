@@ -63,31 +63,4 @@ class EncryptionHelper {
         $encrypted = substr($data, 16);
         return openssl_decrypt($encrypted, 'AES-256-CBC', $key, 0, $iv);
     }
-
-    /**
-     * Check if device credentials should be encrypted
-     */
-    public static function shouldEncryptDeviceCredentials(): bool {
-        return env('ENCRYPT_DEVICE_CREDENTIALS', false);
-    }
-
-    /**
-     * Check if stream credentials should be encrypted
-     */
-    public static function shouldEncryptStreamCredentials(): bool {
-        return env('ENCRYPT_STREAM_CREDENTIALS', false);
-    }
-
-    /**
-     * Get encryption status for debugging
-     */
-    public static function getEncryptionStatus(): array {
-        return [
-            'device_credentials_enabled' => self::shouldEncryptDeviceCredentials(),
-            'stream_credentials_enabled' => self::shouldEncryptStreamCredentials(),
-            'encryption_method' => env('ENCRYPTION_METHOD', 'AES-256-CBC'),
-            'credential_key_set' => !empty(env('ENCRYPT_CREDENTIAL_KEY')),
-            'app_key_set' => !empty(config('app.key'))
-        ];
-    }
 }

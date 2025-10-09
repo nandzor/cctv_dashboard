@@ -3,65 +3,80 @@
 @section('title', 'Login')
 
 @section('content')
-  <div class="bg-white rounded-2xl shadow-2xl p-8">
+  <div class="w-full max-w-md">
+    <!-- Header Section -->
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">Welcome Back</h1>
-      <p class="text-gray-600 mt-2">Sign in to your account</p>
+      <h1 class="text-3xl font-bold text-white mb-2">Welcome Back</h1>
+      <p class="text-gray-300">Sign in to your CCTV Dashboard Pro +</p>
     </div>
 
-    <!-- Demo Credentials -->
-    <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-      <p class="text-sm font-medium text-blue-900 mb-2">Demo Credentials:</p>
-      <div class="flex items-center justify-between text-sm text-blue-800">
-        <div>
-          <p class="font-mono">admin@cctv.com / admin123</p>
+    <!-- Main Card -->
+    <x-card class="backdrop-blur-sm bg-white/95 shadow-2xl border border-white/20">
+      <!-- Demo Credentials Section -->
+      <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
+        <div class="flex items-center mb-3">
+          <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="text-sm font-semibold text-blue-900">Demo Credentials</p>
         </div>
-        <button type="button" onclick="fillDemoCredentials()"
-          class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-          Use Demo
-        </button>
-      </div>
-    </div>
-
-    <form method="POST" action="{{ route('login') }}">
-      @csrf
-
-      <div class="mb-6">
-        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-        <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
-          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('email') border-red-500 @enderror">
-        @error('email')
-          <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-        @enderror
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-blue-800">
+            <p class="font-mono bg-blue-100 px-2 py-1 rounded">admin@cctv.com</p>
+            <p class="font-mono bg-blue-100 px-2 py-1 rounded mt-1">admin123</p>
+          </div>
+          <x-button type="button" variant="primary" size="sm" onclick="fillDemoCredentials()" class="shadow-md">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Use Demo
+          </x-button>
+        </div>
       </div>
 
-      <div class="mb-6">
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-        <input id="password" type="password" name="password" required
-          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('password') border-red-500 @enderror">
-        @error('password')
-          <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-        @enderror
+      <!-- Login Form -->
+      <x-form-wrapper method="POST" action="{{ route('login') }}" class="space-y-6">
+
+        <!-- Email Input -->
+        <x-input label="Email Address" name="email" type="email" :value="old('email')" placeholder="Enter your email"
+          required autofocus
+          icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207' />" />
+
+        <!-- Password Input -->
+        <x-input label="Password" name="password" type="password" placeholder="Enter your password" required
+          icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' />" />
+
+        <!-- Remember Me -->
+        <x-checkbox name="remember" label="Remember me for 30 days" />
+
+        <!-- Submit Button -->
+        <x-button type="submit" variant="primary" size="lg" class="w-full shadow-lg">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+          </svg>
+          Sign In
+        </x-button>
+      </x-form-wrapper>
+
+      <!-- Footer Links -->
+      <div class="mt-8 pt-6 border-t border-gray-200">
+        <div class="text-center">
+          <p class="text-sm text-gray-600">
+            Don't have an account?
+            <a href="{{ route('register') }}" class="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+              Create account
+            </a>
+          </p>
+        </div>
       </div>
+    </x-card>
 
-      <div class="mb-6">
-        <label class="flex items-center">
-          <input type="checkbox" name="remember"
-            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-          <span class="ml-2 text-sm text-gray-700">Remember me</span>
-        </label>
-      </div>
-
-      <button type="submit"
-        class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium">
-        Sign In
-      </button>
-    </form>
-
+    <!-- Additional Info -->
     <div class="mt-6 text-center">
-      <p class="text-sm text-gray-600">
-        Don't have an account?
-        <a href="{{ route('register') }}" class="text-blue-600 hover:text-blue-700 font-medium">Sign up</a>
+      <p class="text-xs text-gray-400">
+        Secure access to your CCTV monitoring system
       </p>
     </div>
   </div>
@@ -71,17 +86,8 @@
       document.getElementById('email').value = 'admin@cctv.com';
       document.getElementById('password').value = 'admin123';
 
-      // Show notification
-      const notification = document.createElement('div');
-      notification.className =
-        'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
-      notification.textContent = 'Demo credentials filled!';
-      document.body.appendChild(notification);
-
-      setTimeout(() => {
-        notification.style.opacity = '0';
-        setTimeout(() => notification.remove(), 300);
-      }, 2000);
+      // Show success notification using reusable function
+      showNotification('Demo credentials filled!', 'success');
     }
   </script>
 @endsection

@@ -33,8 +33,7 @@ class DeviceMaster extends Model {
     /**
      * Get the route key for the model.
      */
-    public function getRouteKeyName()
-    {
+    public function getRouteKeyName() {
         return 'device_id';
     }
 
@@ -84,7 +83,7 @@ class DeviceMaster extends Model {
      * Encrypt password before saving (if env enabled)
      */
     public function setPasswordAttribute($value) {
-        if ($value && EncryptionHelper::shouldEncryptDeviceCredentials()) {
+        if ($value && env('ENCRYPT_DEVICE_CREDENTIALS', false)) {
             $this->attributes['password'] = EncryptionHelper::encrypt($value);
         } else {
             $this->attributes['password'] = $value;
@@ -95,7 +94,7 @@ class DeviceMaster extends Model {
      * Decrypt password when accessing (if env enabled)
      */
     public function getPasswordAttribute($value) {
-        if ($value && EncryptionHelper::shouldEncryptDeviceCredentials()) {
+        if ($value) {
             return EncryptionHelper::decrypt($value);
         }
         return $value;
@@ -105,7 +104,7 @@ class DeviceMaster extends Model {
      * Encrypt username before saving (if env enabled)
      */
     public function setUsernameAttribute($value) {
-        if ($value && EncryptionHelper::shouldEncryptDeviceCredentials()) {
+        if ($value) {
             $this->attributes['username'] = EncryptionHelper::encrypt($value);
         } else {
             $this->attributes['username'] = $value;
@@ -116,7 +115,7 @@ class DeviceMaster extends Model {
      * Decrypt username when accessing (if env enabled)
      */
     public function getUsernameAttribute($value) {
-        if ($value && EncryptionHelper::shouldEncryptDeviceCredentials()) {
+        if ($value) {
             return EncryptionHelper::decrypt($value);
         }
         return $value;
@@ -126,7 +125,7 @@ class DeviceMaster extends Model {
      * Encrypt URL before saving (if env enabled)
      */
     public function setUrlAttribute($value) {
-        if ($value && EncryptionHelper::shouldEncryptDeviceCredentials()) {
+        if ($value) {
             $this->attributes['url'] = EncryptionHelper::encrypt($value);
         } else {
             $this->attributes['url'] = $value;
@@ -137,7 +136,7 @@ class DeviceMaster extends Model {
      * Decrypt URL when accessing (if env enabled)
      */
     public function getUrlAttribute($value) {
-        if ($value && EncryptionHelper::shouldEncryptDeviceCredentials()) {
+        if ($value && env('ENCRYPT_DEVICE_CREDENTIALS', false)) {
             return EncryptionHelper::decrypt($value);
         }
         return $value;
@@ -162,5 +161,97 @@ class DeviceMaster extends Model {
      */
     public function scopeByType($query, $type) {
         return $query->where('device_type', $type);
+    }
+
+    /**
+     * Boot method to handle model events
+     */
+    protected static function boot() {
+        parent::boot();
+
+        // Auto-create CCTV stream when device_type is 'cctv'
+        static::created(function ($device) {
+            if ($device->device_type === 'cctv') {
+                $device->createCctvStream();
+            }
+        });
+
+        // Auto-update CCTV stream when device is updated
+        static::updated(function ($device) {
+            if ($device->device_type === 'cctv' && $device->wasChanged(['device_name', 'url', 'username', 'password'])) {
+                $device->updateCctvStream();
+            }
+        });
+
+        // Auto-delete CCTV streams when device is deleted
+        static::deleting(function ($device) {
+            if ($device->device_type === 'cctv') {
+                $device->cctvStreams()->delete();
+            }
+        });
+    }
+
+    /**
+     * Create CCTV stream for this device
+     */
+    public function createCctvStream() {
+        // Check if stream already exists
+        if ($this->cctvStreams()->exists()) {
+            return;
+        }
+
+        // Generate stream name from device name
+        $streamName = $this->device_name . ' Stream';
+
+        // Extract stream protocol from URL
+        $streamProtocol = 'rtsp';
+        if ($this->url) {
+            if (strpos($this->url, 'rtsp://') === 0) {
+                $streamProtocol = 'rtsp';
+            } elseif (strpos($this->url, 'rtmp://') === 0) {
+                $streamProtocol = 'rtmp';
+            } elseif (strpos($this->url, 'http://') === 0 || strpos($this->url, 'https://') === 0) {
+                $streamProtocol = 'http';
+            }
+        }
+
+        // Create the CCTV stream
+        $this->cctvStreams()->create([
+            'branch_id' => $this->branch_id,
+            'stream_name' => $streamName,
+            'stream_url' => $this->url,
+            'stream_username' => $this->username,
+            'stream_password' => $this->password,
+            'stream_protocol' => $streamProtocol,
+            'position' => 1, // Default position
+            'resolution' => '1920x1080', // Default resolution
+            'fps' => 30, // Default FPS
+            'status' => $this->status === 'active' ? 'online' : 'offline',
+        ]);
+    }
+
+    /**
+     * Update CCTV stream for this device
+     */
+    public function updateCctvStream() {
+        $stream = $this->cctvStreams()->first();
+
+        if ($stream) {
+            // Update stream with device data
+            $stream->update([
+                'stream_name' => $this->device_name . ' Stream',
+                'stream_url' => $this->url,
+                'stream_username' => $this->username,
+                'stream_password' => $this->password,
+                'status' => $this->status === 'active' ? 'online' : 'offline',
+            ]);
+        }
+    }
+
+    /**
+     * Check if this device is a CCTV device
+     */
+    public function isCctvDevice() {
+        return $this->device_type === 'cctv';
     }
 }

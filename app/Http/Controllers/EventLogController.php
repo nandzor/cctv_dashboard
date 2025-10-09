@@ -27,7 +27,7 @@ class EventLogController extends Controller {
             $query->where('branch_id', $request->branch_id);
         }
 
-        $events = $query->latest('event_timestamp')->paginate(20);
+        $events = $query->latest('created_at')->paginate(20);
         $branches = CompanyBranch::active()->get();
 
         return view('event-logs.index', compact('events', 'branches'));
@@ -54,7 +54,7 @@ class EventLogController extends Controller {
             $query->where('branch_id', $filters['branch_id']);
         }
 
-        $events = $query->latest('event_timestamp')->get();
+        $events = $query->latest('created_at')->get();
         $format = $request->input('format', 'excel');
 
         // Generate filename using service

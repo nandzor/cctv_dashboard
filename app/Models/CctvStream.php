@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Helpers\EncryptionHelper;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Crypt;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class CctvStream extends Model {
     use HasFactory;
@@ -34,6 +35,7 @@ class CctvStream extends Model {
 
     protected $hidden = [
         'stream_password', // Hide password from JSON responses
+        'stream_username', // Hide username from JSON responses
     ];
 
     /**
@@ -51,11 +53,53 @@ class CctvStream extends Model {
     }
 
     /**
+     * Encrypt stream URL before saving (if env enabled)
+     */
+    public function setStreamUrlAttribute($value) {
+        if ($value) {
+            $this->attributes['stream_url'] = EncryptionHelper::encrypt($value);
+        } else {
+            $this->attributes['stream_url'] = $value;
+        }
+    }
+
+    /**
+     * Decrypt stream URL when accessing (if env enabled)
+     */
+    public function getStreamUrlAttribute($value) {
+        if ($value) {
+            return EncryptionHelper::decrypt($value);
+        }
+        return $value;
+    }
+
+    /**
+     * Encrypt stream username before saving (if env enabled)
+     */
+    public function setStreamUsernameAttribute($value) {
+        if ($value) {
+            $this->attributes['stream_username'] = EncryptionHelper::encrypt($value);
+        } else {
+            $this->attributes['stream_username'] = $value;
+        }
+    }
+
+    /**
+     * Decrypt stream username when accessing (if env enabled)
+     */
+    public function getStreamUsernameAttribute($value) {
+        if ($value) {
+            return EncryptionHelper::decrypt($value);
+        }
+        return $value;
+    }
+
+    /**
      * Encrypt stream password before saving (if env enabled)
      */
     public function setStreamPasswordAttribute($value) {
-        if ($value && env('ENCRYPT_STREAM_CREDENTIALS', false)) {
-            $this->attributes['stream_password'] = Crypt::encryptString($value);
+        if ($value) {
+            $this->attributes['stream_password'] = EncryptionHelper::encrypt($value);
         } else {
             $this->attributes['stream_password'] = $value;
         }
@@ -65,8 +109,29 @@ class CctvStream extends Model {
      * Decrypt stream password when accessing (if env enabled)
      */
     public function getStreamPasswordAttribute($value) {
-        if ($value && env('ENCRYPT_STREAM_CREDENTIALS', false)) {
-            return Crypt::decryptString($value);
+        if ($value) {
+            return EncryptionHelper::decrypt($value);
+        }
+        return $value;
+    }
+
+    /**
+     * Encrypt stream protocol before saving (if env enabled)
+     */
+    public function setStreamProtocolAttribute($value) {
+        if ($value) {
+            $this->attributes['stream_protocol'] = EncryptionHelper::encrypt($value);
+        } else {
+            $this->attributes['stream_protocol'] = $value;
+        }
+    }
+
+    /**
+     * Decrypt stream protocol when accessing (if env enabled)
+     */
+    public function getStreamProtocolAttribute($value) {
+        if ($value) {
+            return EncryptionHelper::decrypt($value);
         }
         return $value;
     }

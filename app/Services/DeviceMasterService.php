@@ -11,8 +11,8 @@ class DeviceMasterService extends BaseService {
     public function __construct() {
         $this->model = new DeviceMaster();
         $this->searchableFields = ['device_id', 'device_name', 'device_type', 'notes'];
-        $this->orderByColumn = 'device_name';
-        $this->orderByDirection = 'asc';
+        $this->orderByColumn = 'created_at';
+        $this->orderByDirection = 'desc';
     }
 
     public function getDeviceWithRelationships(string $deviceId): ?DeviceMaster {

@@ -22,7 +22,8 @@ return new class extends Migration {
 
             // Foreign keys
             $table->foreign('device_id')->references('device_id')->on('device_masters')->onDelete('cascade');
-            $table->foreign('re_id')->references('re_id')->on('re_id_masters')->onDelete('set null');
+            // Note: re_id foreign key constraint will be handled by fix migration
+            // due to composite unique constraint in re_id_masters table
 
             // Indexes
             $table->index('re_id');

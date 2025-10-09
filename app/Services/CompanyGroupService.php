@@ -12,8 +12,8 @@ class CompanyGroupService extends BaseService {
     public function __construct() {
         $this->model = new CompanyGroup();
         $this->searchableFields = ['group_name', 'province', 'description'];
-        $this->orderByColumn = 'group_name';
-        $this->orderByDirection = 'asc';
+        $this->orderByColumn = 'created_at';
+        $this->orderByDirection = 'desc';
     }
 
     /**

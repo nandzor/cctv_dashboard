@@ -12,8 +12,8 @@ class CompanyBranchService extends BaseService {
     public function __construct() {
         $this->model = new CompanyBranch();
         $this->searchableFields = ['branch_name', 'city', 'address', 'contact_person', 'phone'];
-        $this->orderByColumn = 'branch_name';
-        $this->orderByDirection = 'asc';
+        $this->orderByColumn = 'created_at';
+        $this->orderByDirection = 'desc';
     }
 
     /**
