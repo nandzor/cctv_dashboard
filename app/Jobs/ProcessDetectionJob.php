@@ -139,9 +139,10 @@ class ProcessDetectionJob implements ShouldQueue {
                     ->onQueue('notifications')
                     ->delay(now()->addSeconds(5));
 
-                UpdateDailyReportJob::dispatch($today, $this->branchId)
-                    ->onQueue('reports')
-                    ->delay(now()->addMinutes(5));
+                // UpdateDailyReportJob moved to scheduler (every 5 minutes)
+                // UpdateDailyReportJob::dispatch($today, $this->branchId)
+                //     ->onQueue('reports')
+                //     ->delay(now()->addMinutes(5));
             }, 5); // Retry transaction up to 5 times on deadlock
 
         } catch (\Exception $e) {

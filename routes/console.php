@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Schedule;
 use App\Jobs\AggregateApiUsageJob;
 use App\Jobs\AggregateWhatsAppDeliveryJob;
 use App\Jobs\UpdateDailyReportJob;
+use App\Jobs\UpdateMonthlyReportJob;
 use App\Jobs\CleanupOldFilesJob;
 
 Artisan::command('inspire', function () {
@@ -29,6 +30,22 @@ Schedule::command('reports:generate-counting --days=1')
     ->dailyAt('01:15')
     ->name('generate_counting_reports')
     ->withoutOverlapping();
+
+// Update daily reports every 5 minutes (moved from ProcessDetectionJob)
+Schedule::call(function () {
+    $today = now()->toDateString();
+    $branches = \App\Models\CompanyBranch::where('status', 'active')->get();
+
+    foreach ($branches as $branch) {
+        UpdateDailyReportJob::dispatch($today, $branch->id)->onQueue('reports');
+    }
+})->everyFiveMinutes()->name('update_daily_reports_scheduled')->withoutOverlapping();
+
+// Generate monthly reports (runs on 1st of each month)
+Schedule::call(function () {
+    $lastMonth = now()->subMonth()->format('Y-m');
+    UpdateMonthlyReportJob::dispatch($lastMonth)->onQueue('reports');
+})->monthlyOn(1, '02:00')->name('update_monthly_reports')->withoutOverlapping();
 
 Schedule::call(function () {
     CleanupOldFilesJob::dispatch(90)->onQueue('maintenance');

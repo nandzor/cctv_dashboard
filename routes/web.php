@@ -32,6 +32,11 @@ Route::middleware('guest')->group(function () {
 Route::get('/queue-status', [MonitoringController::class, 'queueStatus'])->name('queue.status');
 Route::get('/health', [MonitoringController::class, 'health'])->name('health');
 
+// Horizon dashboard (admin only)
+Route::get('/horizon', function () {
+    return redirect('/horizon/dashboard');
+})->middleware('admin');
+
 // Authenticated routes
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
