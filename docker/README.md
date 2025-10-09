@@ -46,6 +46,13 @@ docker/
 - **Cache** dan session storage
 - **Persistent** data
 
+### vite (Port 5173)
+
+- **Vite** development server
+- **Hot reload** untuk JavaScript/CSS
+- **Node.js 20** dengan npm
+- **Volume sync** dengan host
+
 ## 🎯 Volume Sync
 
 ### Development Benefits:
@@ -181,6 +188,19 @@ npm run build
 # Tidak perlu restart container
 ```
 
+### Vite Development
+
+```bash
+# Vite development server sudah berjalan di port 5173
+# Hot reload otomatis untuk JavaScript/CSS
+
+# Edit file JavaScript
+vim resources/js/app.js
+
+# Perubahan langsung terlihat di browser
+# Tidak perlu refresh manual
+```
+
 ### Database Operations
 
 ```bash
@@ -258,6 +278,7 @@ postgresql:
 | cctv_app   | 7443      | 443            | HTTPS       |
 | postgresql | 5433      | 5432           | PostgreSQL  |
 | redis      | 6380      | 6379           | Redis       |
+| vite       | 5173      | 5173           | Vite Dev    |
 
 ## 🛠️ Troubleshooting
 
