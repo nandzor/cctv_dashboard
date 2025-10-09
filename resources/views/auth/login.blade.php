@@ -86,7 +86,7 @@
       document.getElementById('email').value = 'admin@cctv.com';
       document.getElementById('password').value = 'admin123';
 
-      // Show success notification using reusable function
+      // Show success notification using global function
       showNotification('Demo credentials filled!', 'success');
     }
   </script>

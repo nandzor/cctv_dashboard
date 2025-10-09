@@ -33,6 +33,9 @@
   <div class="relative z-10 w-full max-w-md px-6">
     @yield('content')
   </div>
+
+  <!-- Include notification component for global showNotification function -->
+  <x-notification />
 </body>
 
 </html>
