@@ -172,10 +172,10 @@ class ApiCredential extends Model {
      */
     public static function findByApiKey($apiKey) {
         // Get all active credentials and check decrypted values
-        $credentials = static::active()->get();
+        $credentials = static::where('status', 'active')->get();
 
         foreach ($credentials as $credential) {
-            if ($credential->api_key === $apiKey) {
+            if ($credential->api_key === $apiKey && !$credential->isExpired()) {
                 return $credential;
             }
         }

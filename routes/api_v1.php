@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\DetectionController;
+use App\Http\Controllers\Api\V1\ApiCredentialController;
+use App\Http\Controllers\CctvLiveStreamController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,6 +29,16 @@ Route::middleware('auth:sanctum')->group(function () {
     ]);
 
     Route::get('/users/pagination/options', [UserController::class, 'paginationOptions'])->name('v1.users.pagination.options');
+
+    // API Credentials management routes
+    Route::apiResource('api-credentials', ApiCredentialController::class)->names([
+        'index' => 'v1.api-credentials.index',
+        'store' => 'v1.api-credentials.store',
+        'show' => 'v1.api-credentials.show',
+        'update' => 'v1.api-credentials.update',
+        'destroy' => 'v1.api-credentials.destroy',
+    ]);
+
 });
 
 // API Key protected routes
@@ -43,4 +55,17 @@ Route::middleware('api.key')->group(function () {
 
     // Branch detection routes
     Route::get('/branch/{branchId}/detections', [DetectionController::class, 'branchDetections'])->name('v1.branch.detections');
+
+    // API Credential test endpoint
+    Route::get('/api-credentials/{id}/test', [ApiCredentialController::class, 'test'])->name('v1.api-credentials.test');
+});
+
+// CCTV API routes (protected by API key)
+Route::middleware('api.key')->group(function () {
+    // CCTV Stream routes
+    Route::get('/cctv/streams/{deviceId}', [CctvLiveStreamController::class, 'getStreamUrl'])->name('v1.cctv.stream-url');
+    Route::get('/cctv/branches/{branchId}/devices', [CctvLiveStreamController::class, 'getBranchDevices'])->name('v1.cctv.branch-devices');
+    Route::put('/cctv/layouts/{layoutId}/positions/{positionNumber}', [CctvLiveStreamController::class, 'updatePosition'])->name('v1.cctv.update-position');
+    Route::post('/cctv/screenshots/{deviceId}', [CctvLiveStreamController::class, 'captureScreenshot'])->name('v1.cctv.screenshot');
+    Route::post('/cctv/recordings/{deviceId}', [CctvLiveStreamController::class, 'toggleRecording'])->name('v1.cctv.recording');
 });

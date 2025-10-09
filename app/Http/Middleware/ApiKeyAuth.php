@@ -25,9 +25,7 @@ class ApiKeyAuth {
 
         // Find API credential with caching for performance
         $credential = Cache::remember("api_credential:{$apiKey}", 300, function () use ($apiKey) {
-            return ApiCredential::where('api_key', $apiKey)
-                ->where('status', 'active')
-                ->first();
+            return ApiCredential::findByApiKey($apiKey);
         });
 
         if (!$credential) {

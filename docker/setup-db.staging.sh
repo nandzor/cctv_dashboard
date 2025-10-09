@@ -16,9 +16,17 @@ echo "✅ PostgreSQL is ready!"
 echo "📊 Creating database if not exists..."
 php artisan db:create || echo "Database might already exist"
 
+# Test database connection
+echo "🔗 Testing database connection..."
+php artisan tinker --execute="DB::connection()->getPdo();" || exit 1
+
 # Run migrations
 echo "🔄 Running database migrations..."
 php artisan migrate --force
+
+# Check migration status
+echo "📋 Checking migration status..."
+php artisan migrate:status
 
 # Run seeders
 echo "🌱 Running database seeders..."

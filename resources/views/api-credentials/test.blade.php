@@ -35,9 +35,9 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Endpoint</label>
           <select id="endpoint" class="block w-full px-3 py-2 text-sm rounded-lg border-gray-300 shadow-sm">
-            <option value="/api/detections">GET /api/detections - List all detections</option>
-            <option value="/api/detection/summary">GET /api/detection/summary - Detection summary</option>
-            <option value="/api/person/REID_TEST_001">GET /api/person/{reId} - Get person details</option>
+            <option value="/api/v1/detections">GET /api/v1/detections - List all detections</option>
+            <option value="/api/v1/detection/summary">GET /api/v1/detection/summary - Detection summary</option>
+            <option value="/api/v1/person/REID_TEST_001">GET /api/v1/person/{reId} - Get person details</option>
           </select>
         </div>
 
@@ -103,7 +103,7 @@
     <x-card title="cURL Example">
       <div class="space-y-3">
         <p class="text-sm text-gray-600">Use this cURL command to test your API from command line:</p>
-        <pre id="curl-command" class="text-xs bg-gray-900 text-green-400 p-4 rounded overflow-x-auto">curl -X GET "{{ url('/api/detections') }}" \
+        <pre id="curl-command" class="text-xs bg-gray-900 text-green-400 p-4 rounded overflow-x-auto">curl -X GET "{{ url('/api/v1/detections') }}" \
   -H "X-API-Key: {{ $apiCredential->api_key }}" \
   -H "X-API-Secret: YOUR_API_SECRET" \
   -H "Accept: application/json"</pre>
@@ -135,19 +135,31 @@
       startTime = Date.now();
 
       try {
+        // Sanitize headers to ensure only ASCII characters
+        const sanitizedApiKey = apiKey.replace(/[^\x20-\x7E]/g, '');
+        const sanitizedApiSecret = apiSecret.replace(/[^\x20-\x7E]/g, '');
+
         const response = await fetch(`{{ url('') }}${endpoint}`, {
           method: 'GET',
           headers: {
-            'X-API-Key': apiKey,
-            'X-API-Secret': apiSecret,
-            'Accept': 'application/json'
+            'X-API-Key': sanitizedApiKey,
+            'X-API-Secret': sanitizedApiSecret,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
           }
         });
 
         const endTime = Date.now();
         const responseTime = endTime - startTime;
 
-        const data = await response.json();
+        let data;
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          // If JSON parsing fails, get text response
+          const textResponse = await response.text();
+          data = { error: 'Invalid JSON response', raw: textResponse.substring(0, 500) };
+        }
 
         // Hide loading
         document.getElementById('loading').classList.add('hidden');
@@ -173,12 +185,16 @@
         const rateLimit = response.headers.get('X-RateLimit-Limit');
         const rateRemaining = response.headers.get('X-RateLimit-Remaining');
         const rateReset = response.headers.get('X-RateLimit-Reset');
+        const contentType = response.headers.get('Content-Type');
+
+        // Sanitize header values
+        const sanitizeHeader = (value) => value ? value.replace(/[^\x20-\x7E]/g, '') : '';
 
         headersDiv.innerHTML = `
-          <div><span class="font-semibold">Content-Type:</span> ${response.headers.get('Content-Type')}</div>
-          ${rateLimit ? `<div><span class="font-semibold">X-RateLimit-Limit:</span> ${rateLimit}</div>` : ''}
-          ${rateRemaining ? `<div><span class="font-semibold">X-RateLimit-Remaining:</span> ${rateRemaining}</div>` : ''}
-          ${rateReset ? `<div><span class="font-semibold">X-RateLimit-Reset:</span> ${new Date(rateReset * 1000).toLocaleString()}</div>` : ''}
+          <div><span class="font-semibold">Content-Type:</span> ${sanitizeHeader(contentType)}</div>
+          ${rateLimit ? `<div><span class="font-semibold">X-RateLimit-Limit:</span> ${sanitizeHeader(rateLimit)}</div>` : ''}
+          ${rateRemaining ? `<div><span class="font-semibold">X-RateLimit-Remaining:</span> ${sanitizeHeader(rateRemaining)}</div>` : ''}
+          ${rateReset ? `<div><span class="font-semibold">X-RateLimit-Reset:</span> ${sanitizeHeader(rateReset)}</div>` : ''}
         `;
 
         // Body

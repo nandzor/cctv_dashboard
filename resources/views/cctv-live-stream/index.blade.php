@@ -252,7 +252,7 @@
      * @returns {Promise<Array>}
      */
     async function fetchBranchDevices(branchId) {
-      const response = await fetch(`/api/cctv/branches/${branchId}/devices`);
+      const response = await fetch(`/api/v1/cctv/branches/${branchId}/devices`);
       if (!response.ok) throw new Error('Failed to fetch devices');
       const result = await response.json();
       return result.data || result; // Handle both old and new format
@@ -264,7 +264,7 @@
      * @returns {Promise<Object>}
      */
     async function fetchStreamData(deviceId) {
-      const response = await fetch(`/api/cctv/streams/${deviceId}`);
+      const response = await fetch(`/api/v1/cctv/streams/${deviceId}`);
       if (!response.ok) throw new Error('Failed to fetch stream data');
       const result = await response.json();
       return result.data || result; // Handle both old and new format
@@ -277,7 +277,7 @@
      * @returns {Promise<Object>}
      */
     async function savePositionConfig(positionNumber, data) {
-      const response = await fetch(`/api/cctv/layouts/${currentLayout}/positions/${positionNumber}`, {
+      const response = await fetch(`/api/v1/cctv/layouts/${currentLayout}/positions/${positionNumber}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -475,7 +475,7 @@
       }
 
       try {
-        const response = await fetch(`/api/cctv/screenshots/${streamData.device_id}`, {
+        const response = await fetch(`/api/v1/cctv/screenshots/${streamData.device_id}`, {
           method: 'POST',
           headers: {
             'X-CSRF-TOKEN': getCsrfToken()
@@ -508,7 +508,7 @@
       }
 
       try {
-        const response = await fetch(`/api/cctv/recordings/${streamData.device_id}`, {
+        const response = await fetch(`/api/v1/cctv/recordings/${streamData.device_id}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
