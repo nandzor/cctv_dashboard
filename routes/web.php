@@ -8,6 +8,7 @@ use App\Http\Controllers\CompanyBranchController;
 use App\Http\Controllers\DeviceMasterController;
 use App\Http\Controllers\ReIdMasterController;
 use App\Http\Controllers\CctvLayoutController;
+use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\CctvLiveStreamController;
 use App\Http\Controllers\EventLogController;
 use App\Http\Controllers\ReportController;
@@ -26,6 +27,10 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
     Route::post('/register', [AuthController::class, 'register']);
 });
+
+// Monitoring routes (no auth required for health checks)
+Route::get('/queue-status', [MonitoringController::class, 'queueStatus'])->name('queue.status');
+Route::get('/health', [MonitoringController::class, 'health'])->name('health');
 
 // Authenticated routes
 Route::middleware('auth')->group(function () {

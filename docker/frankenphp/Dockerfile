@@ -55,6 +55,12 @@ RUN mkdir -p /var/log/caddy \
     && chmod 755 /app \
     && chmod 755 /var/log/caddy
 
+# Konfigurasi FrankenPHP untuk web + queue processing
+ENV FRANKENPHP_CONFIG="worker:16 scheduler:2"
+ENV QUEUE_CONNECTION=redis
+ENV REDIS_HOST=redis
+ENV REDIS_PORT=6379
+
 # Expose port 80
 EXPOSE 80 443
 

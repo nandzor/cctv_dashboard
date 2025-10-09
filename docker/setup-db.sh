@@ -31,8 +31,18 @@ php artisan cache:clear
 php artisan route:clear
 php artisan view:clear
 
+# Setup queue processing with Horizon
+echo "⚙️ Setting up Laravel Horizon..."
+echo "✅ FrankenPHP: 16 workers for web requests"
+echo "✅ Horizon: Advanced queue monitoring and processing"
+
+# Start Horizon in background
+echo "🚀 Starting Laravel Horizon..."
+php artisan horizon &
+HORIZON_PID=$!
+
 echo "✅ Database setup completed!"
-echo "🚀 Starting FrankenPHP..."
+echo "🚀 Starting FrankenPHP with Horizon queue processing..."
 
 # Start FrankenPHP
 exec frankenphp run --config /etc/caddy/Caddyfile

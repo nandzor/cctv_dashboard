@@ -201,6 +201,137 @@ vim resources/js/app.js
 # Tidak perlu refresh manual
 ```
 
+## 🔄 Queue Processing with Laravel Horizon
+
+### Laravel Horizon Integration
+
+- **Container**: `cctv_app` (FrankenPHP + Horizon)
+- **Function**: Web requests + Advanced queue monitoring
+- **FrankenPHP**: 16 workers untuk web requests
+- **Horizon**: Advanced queue processing dengan dashboard
+- **Connection**: Redis
+- **Queues**: `default`, `high`, `low`
+- **Dashboard**: `http://localhost:9001/horizon`
+
+### Testing Queue
+
+```bash
+# Test queue dengan 5 jobs
+docker compose exec cctv_app php artisan queue:test
+
+# Test queue dengan 10 jobs
+docker compose exec cctv_app php artisan queue:test --count=10
+
+# Monitor FrankenPHP logs (includes queue processing)
+docker compose logs cctv_app -f
+
+# Check queue status
+docker compose exec cctv_app php artisan queue:work --once
+```
+
+### Laravel Horizon Dashboard
+
+```bash
+# Access Horizon Dashboard
+http://localhost:9001/horizon
+
+# Horizon Commands
+docker compose exec cctv_app php artisan horizon:status
+docker compose exec cctv_app php artisan horizon:terminate
+docker compose exec cctv_app php artisan horizon:pause
+docker compose exec cctv_app php artisan horizon:continue
+```
+
+### Horizon Features
+
+- ✅ **Real-time Dashboard** - Live monitoring queue jobs
+- ✅ **Job Metrics** - Throughput, runtime, failure rates
+- ✅ **Auto-scaling** - Dynamic worker scaling based on load
+- ✅ **Job Monitoring** - Track individual job progress
+- ✅ **Failed Job Management** - Retry, delete, or inspect failed jobs
+- ✅ **Queue Balancing** - Intelligent load balancing
+- ✅ **Memory Management** - Auto-restart workers to prevent memory leaks
+
+### FrankenPHP + Horizon Configuration
+
+```bash
+# FrankenPHP Configuration:
+# - 16 workers untuk web requests
+# - 2 schedulers untuk background tasks
+
+# Laravel Horizon Configuration:
+# - 8 workers untuk queue jobs (scalable)
+# - Auto-scaling berdasarkan load
+# - Queue connection: redis
+# - Redis host: redis
+# - Redis port: 6379
+# - Queues: default,high,low
+# - Dashboard: http://localhost:9001/horizon
+```
+
+### Queue Scaling Configuration
+
+```bash
+# Development Environment (8 workers)
+maxProcesses: 8
+balanceMaxShift: 1
+balanceCooldown: 3
+
+# Production Environment (10 workers)
+maxProcesses: 10
+balanceMaxShift: 1
+balanceCooldown: 3
+
+# Local Environment (3 workers)
+maxProcesses: 3
+```
+
+### Benefits of Integrated Approach
+
+- ✅ **Resource Efficient** - Satu container untuk web + queue
+- ✅ **Simplified Architecture** - Tidak perlu container terpisah
+- ✅ **Better Performance** - FrankenPHP optimized untuk concurrency
+- ✅ **Unified Logging** - Semua logs dalam satu tempat
+
+## 📊 Monitoring & Health Checks
+
+### Health Endpoints
+
+```bash
+# Basic health check
+curl http://localhost:9001/health
+
+# Queue status (JSON)
+curl http://localhost:9001/queue-status
+
+# FrankenPHP metrics (Prometheus format)
+curl http://localhost:9001/metrics
+```
+
+### Command Line Monitoring
+
+```bash
+# System status
+docker compose exec cctv_app php artisan monitor:system
+
+# Watch mode (real-time)
+docker compose exec cctv_app php artisan monitor:system --watch
+
+# Test queue
+docker compose exec cctv_app php artisan queue:test --count=5
+
+# Monitor logs
+docker compose logs cctv_app -f
+```
+
+### Monitoring Features
+
+- ✅ **Health Checks** - Database, Redis, system status
+- ✅ **Queue Monitoring** - Pending jobs, failed jobs
+- ✅ **System Metrics** - Memory usage, performance
+- ✅ **Real-time Watch** - Live monitoring dengan auto-refresh
+- ✅ **Prometheus Metrics** - Compatible dengan monitoring tools
+
 ### Database Operations
 
 ```bash
