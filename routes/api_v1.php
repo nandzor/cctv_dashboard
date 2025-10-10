@@ -18,8 +18,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// User management routes
-Route::middleware('auth:sanctum')->group(function () {
+// User management routes - using session-based auth with proper API response
+Route::middleware('api.session|auth:sanctum')->group(function () {
     Route::apiResource('users', UserController::class)->names([
         'index' => 'v1.users.index',
         'store' => 'v1.users.store',
@@ -38,7 +38,6 @@ Route::middleware('auth:sanctum')->group(function () {
         'update' => 'v1.api-credentials.update',
         'destroy' => 'v1.api-credentials.destroy',
     ]);
-
 });
 
 // API Key protected routes
@@ -60,12 +59,12 @@ Route::middleware('api.key')->group(function () {
     Route::get('/api-credentials/{id}/test', [ApiCredentialController::class, 'test'])->name('v1.api-credentials.test');
 });
 
-// CCTV API routes (protected by API key)
-Route::middleware('api.key')->group(function () {
-    // CCTV Stream routes
-    Route::get('/cctv/streams/{deviceId}', [CctvLiveStreamController::class, 'getStreamUrl'])->name('v1.cctv.stream-url');
-    Route::get('/cctv/branches/{branchId}/devices', [CctvLiveStreamController::class, 'getBranchDevices'])->name('v1.cctv.branch-devices');
-    Route::put('/cctv/layouts/{layoutId}/positions/{positionNumber}', [CctvLiveStreamController::class, 'updatePosition'])->name('v1.cctv.update-position');
-    Route::post('/cctv/screenshots/{deviceId}', [CctvLiveStreamController::class, 'captureScreenshot'])->name('v1.cctv.screenshot');
-    Route::post('/cctv/recordings/{deviceId}', [CctvLiveStreamController::class, 'toggleRecording'])->name('v1.cctv.recording');
-});
+// CCTV API routes - using session-based auth with proper API response
+// Route::middleware('auth:sanctum')->group(function () {
+//     // CCTV Stream routes
+//     Route::get('/cctv/streams/{deviceId}', [CctvLiveStreamController::class, 'getStreamUrl'])->name('v1.cctv.stream-url');
+//     Route::get('/cctv/branches/{branchId}/devices', [CctvLiveStreamController::class, 'getBranchDevices'])->name('v1.cctv.branch-devices');
+//     Route::put('/cctv/layouts/{layoutId}/positions/{positionNumber}', [CctvLiveStreamController::class, 'updatePosition'])->name('v1.cctv.update-position');
+//     Route::post('/cctv/screenshots/{deviceId}', [CctvLiveStreamController::class, 'captureScreenshot'])->name('v1.cctv.screenshot');
+//     Route::post('/cctv/recordings/{deviceId}', [CctvLiveStreamController::class, 'toggleRecording'])->name('v1.cctv.recording');
+// });

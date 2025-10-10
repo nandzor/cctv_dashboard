@@ -64,13 +64,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/event-logs/export/download', [EventLogController::class, 'export'])->name('event-logs.export');
     Route::get('/event-logs/{eventLog}', [EventLogController::class, 'show'])->name('event-logs.show');
 
-    // CCTV Live Stream
+    // // CCTV Live Stream
     Route::get('/cctv-live-stream', [CctvLiveStreamController::class, 'index'])->name('cctv-live-stream.index');
-    Route::get('/api/cctv/streams/{deviceId}', [CctvLiveStreamController::class, 'getStreamUrl'])->name('cctv-live-stream.stream-url');
-    Route::put('/api/cctv/layouts/{layoutId}/positions/{positionNumber}', [CctvLiveStreamController::class, 'updatePosition'])->name('cctv-live-stream.update-position');
-    Route::get('/api/cctv/branches/{branchId}/devices', [CctvLiveStreamController::class, 'getBranchDevices'])->name('cctv-live-stream.branch-devices');
-    Route::post('/api/cctv/screenshots/{deviceId}', [CctvLiveStreamController::class, 'captureScreenshot'])->name('cctv-live-stream.screenshot');
-    Route::post('/api/cctv/recordings/{deviceId}', [CctvLiveStreamController::class, 'toggleRecording'])->name('cctv-live-stream.recording');
+    Route::get('/api/v1/cctv/streams/{deviceId}', [CctvLiveStreamController::class, 'getStreamUrl'])->name('cctv-live-stream.stream-url');
+    Route::put('/api/v1/cctv/layouts/{layoutId}/positions/{positionNumber}', [CctvLiveStreamController::class, 'updatePosition'])->name('cctv-live-stream.update-position');
+    Route::get('/api/v1/cctv/branches/{branchId}/devices', [CctvLiveStreamController::class, 'getBranchDevices'])->name('cctv-live-stream.branch-devices');
+    Route::post('/api/v1/cctv/screenshots/{deviceId}', [CctvLiveStreamController::class, 'captureScreenshot'])->name('cctv-live-stream.screenshot');
+    Route::post('/api/v1/cctv/recordings/{deviceId}', [CctvLiveStreamController::class, 'toggleRecording'])->name('cctv-live-stream.recording');
 
     // Reports
     Route::prefix('reports')->name('reports.')->group(function () {
