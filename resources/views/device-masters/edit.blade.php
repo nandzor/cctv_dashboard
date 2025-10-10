@@ -58,8 +58,8 @@
         <x-textarea name="notes" label="Notes" :value="$deviceMaster->notes"
           placeholder="Additional information about the device..." rows="3" hint="Optional notes or comments" />
 
-        <x-select name="status" label="Status" :options="['active' => 'Active', 'inactive' => 'Inactive']" :selected="$deviceMaster->status" placeholder="" required
-          hint="Device status" />
+        <x-status-select name="status" label="Status" :value="$deviceMaster->status" required hint="Device status"
+          :showAllOption="false" />
 
         <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
           <x-button variant="secondary" :href="route('device-masters.show', $deviceMaster)">

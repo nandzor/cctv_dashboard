@@ -48,10 +48,8 @@
             placeholder="106.816666" hint="Geographic longitude coordinate" />
         </div>
 
-        <x-select name="status" label="Status" :value="$companyBranch->status" required hint="Branch status">
-          <option value="active" {{ $companyBranch->status === 'active' ? 'selected' : '' }}>Active</option>
-          <option value="inactive" {{ $companyBranch->status === 'inactive' ? 'selected' : '' }}>Inactive</option>
-        </x-select>
+        <x-status-select name="status" label="Status" :value="$companyBranch->status" required hint="Branch status"
+          :showAllOption="false" />
 
         <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
           <x-button variant="secondary" :href="route('company-branches.show', $companyBranch)">

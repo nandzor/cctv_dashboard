@@ -41,10 +41,7 @@
             hint="Geographic longitude coordinate" />
         </div>
 
-        <x-select name="status" label="Status" required hint="Branch status">
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </x-select>
+        <x-status-select name="status" label="Status" value="active" required hint="Branch status" :showAllOption="false" />
 
         <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
           <x-button variant="secondary" :href="route('company-branches.index')">
