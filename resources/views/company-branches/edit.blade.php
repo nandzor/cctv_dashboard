@@ -19,13 +19,14 @@
         @csrf
         @method('PUT')
 
-        <x-company-group-select name="group_id" :value="$companyBranch->group_id" label="Company Group" required hint="Select the company group this branch belongs to" />
+        <x-company-group-select name="group_id" :value="$companyBranch->group_id" label="Company Group" required
+          hint="Select the company group this branch belongs to" />
 
         <x-input name="branch_code" label="Branch Code" :value="$companyBranch->branch_code" placeholder="e.g., JKT001" required
-          hint="Unique code identifier for the branch" />
+          hint="Unique code identifier for the branch (no spaces allowed)" onkeypress="return event.charCode != 32" />
 
-        <x-input name="branch_name" label="Branch Name" :value="$companyBranch->branch_name" placeholder="e.g., Jakarta Central Branch" required
-          hint="Descriptive name for the branch" />
+        <x-input name="branch_name" label="Branch Name" :value="$companyBranch->branch_name" placeholder="e.g., Jakarta Central Branch"
+          required hint="Descriptive name for the branch" />
 
         <x-input name="city_name" label="City Name" :value="$companyBranch->city_name" placeholder="e.g., Central Jakarta" required
           hint="City where the branch is located" />
@@ -41,10 +42,10 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <x-input type="number" name="latitude" label="Latitude" :value="$companyBranch->latitude" step="0.00000001" placeholder="-6.200000"
-            hint="Geographic latitude coordinate" />
-          <x-input type="number" name="longitude" label="Longitude" :value="$companyBranch->longitude" step="0.00000001" placeholder="106.816666"
-            hint="Geographic longitude coordinate" />
+          <x-input type="number" name="latitude" label="Latitude" :value="$companyBranch->latitude" step="0.00000001"
+            placeholder="-6.200000" hint="Geographic latitude coordinate" />
+          <x-input type="number" name="longitude" label="Longitude" :value="$companyBranch->longitude" step="0.00000001"
+            placeholder="106.816666" hint="Geographic longitude coordinate" />
         </div>
 
         <x-select name="status" label="Status" :value="$companyBranch->status" required hint="Branch status">
@@ -67,8 +68,3 @@
     </x-card>
   </div>
 @endsection
-
-
-
-
-

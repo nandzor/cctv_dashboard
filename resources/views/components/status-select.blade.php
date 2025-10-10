@@ -8,9 +8,9 @@
     'showAllOption' => true,
     'allOptionText' => 'All Status',
     'options' => [
-        '1' => 'Active',
-        '0' => 'Inactive'
-    ]
+        'active' => 'Active',
+        'inactive' => 'Inactive',
+    ],
 ])
 
 @if ($label)

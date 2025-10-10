@@ -22,7 +22,8 @@
         <x-input name="name" label="Full Name" :value="$user->name" placeholder="Enter full name" required />
 
         <x-input type="email" name="email" label="Email Address" :value="$user->email" placeholder="user@example.com"
-          required hint="This email will be used for login" />
+          required hint="This email will be used for login (no spaces allowed)"
+          onkeypress="return event.charCode != 32" />
 
         <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div class="flex">

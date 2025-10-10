@@ -16,7 +16,7 @@
         <x-input name="name" label="Full Name" placeholder="Enter full name" required />
 
         <x-input type="email" name="email" label="Email Address" placeholder="user@example.com" required
-          hint="This email will be used for login" />
+          hint="This email will be used for login (no spaces allowed)" onkeypress="return event.charCode != 32" />
 
         <x-input type="password" name="password" label="Password" placeholder="Enter password" required
           hint="Password must be at least 6 characters" />

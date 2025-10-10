@@ -14,7 +14,7 @@
         @csrf
 
         <x-input name="province_code" label="Province Code" placeholder="e.g., JB (Jawa Barat)" required
-          hint="Short code identifier for the province" />
+          hint="Short code identifier for the province (no spaces allowed)" onkeypress="return event.charCode != 32" />
 
         <x-input name="province_name" label="Province Name" placeholder="e.g., Jawa Barat" required
           hint="Full name of the province" />
@@ -22,8 +22,8 @@
         <x-input name="group_name" label="Group Name" placeholder="e.g., PT. Company Name" required
           hint="Company group name" />
 
-        <x-textarea name="address" label="Address" placeholder="Full address of the company group"
-          rows="3" hint="Complete address information" />
+        <x-textarea name="address" label="Address" placeholder="Full address of the company group" rows="3"
+          hint="Complete address information" />
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <x-input type="tel" name="phone" label="Phone" placeholder="e.g., +62812345678"
@@ -32,10 +32,7 @@
             hint="Contact email address" />
         </div>
 
-        <x-select name="status" label="Status" required hint="Group status">
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </x-select>
+        <x-status-select name="status" label="Status" :value="'active'" required hint="Group status" :showAllOption="false" />
 
         <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
           <x-button variant="secondary" :href="route('company-groups.index')">

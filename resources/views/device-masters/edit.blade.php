@@ -20,7 +20,7 @@
         @method('PUT')
 
         <x-input name="device_id" label="Device ID" :value="$deviceMaster->device_id" placeholder="e.g., CAMERA_001" required
-          hint="Unique identifier for the device" />
+          hint="Unique identifier for the device (no spaces allowed)" onkeypress="return event.charCode != 32" />
 
         <x-input name="device_name" label="Device Name" :value="$deviceMaster->device_name" placeholder="Main Entrance Camera" required
           hint="Descriptive name for the device" />

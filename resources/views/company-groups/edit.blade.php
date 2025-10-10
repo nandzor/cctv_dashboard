@@ -20,7 +20,7 @@
         @method('PUT')
 
         <x-input name="province_code" label="Province Code" :value="$companyGroup->province_code" placeholder="e.g., JB (Jawa Barat)" required
-          hint="Short code identifier for the province" />
+          hint="Short code identifier for the province (no spaces allowed)" onkeypress="return event.charCode != 32" />
 
         <x-input name="province_name" label="Province Name" :value="$companyGroup->province_name" placeholder="e.g., Jawa Barat" required
           hint="Full name of the province" />
@@ -38,10 +38,7 @@
             hint="Contact email address" />
         </div>
 
-        <x-select name="status" label="Status" :value="$companyGroup->status" required hint="Group status">
-          <option value="active" {{ $companyGroup->status === 'active' ? 'selected' : '' }}>Active</option>
-          <option value="inactive" {{ $companyGroup->status === 'inactive' ? 'selected' : '' }}>Inactive</option>
-        </x-select>
+        <x-status-select name="status" label="Status" :value="$companyGroup->status" required hint="Group status" :showAllOption="false" />
 
         <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
           <x-button variant="secondary" :href="route('company-groups.show', $companyGroup)">
