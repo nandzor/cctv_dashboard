@@ -22,6 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
 
+        // Add RequestResponseInterceptor to API middleware group for daily access logging
+        $middleware->api(append: [
+            \App\Http\Middleware\RequestResponseInterceptor::class,
+        ]);
+
         $middleware->alias([
             'auth.sanctum' => \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             'static.token' => \App\Http\Middleware\ValidateStaticToken::class,

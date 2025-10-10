@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\ApiCredential;
 
@@ -18,16 +20,18 @@ class RequestResponseInterceptor {
         $startTime = microtime(true);
         $startMemory = memory_get_usage();
 
-        // Enable query logging if configured
-        if (config('app.log_queries', false)) {
-            DB::enableQueryLog();
-        }
+        // Generate unique request ID
+        $requestId = Str::uuid()->toString();
+        $request->merge(['request_id' => $requestId]);
+
+        // Always enable query logging for API requests to track query count
+        DB::enableQueryLog();
 
         $response = $next($request);
 
         // Log API requests only
         if ($request->is('api/*')) {
-            $this->logApiRequest($request, $response, $startTime, $startMemory);
+            $this->logApiRequest($request, $response, $startTime, $startMemory, $requestId);
         }
 
         return $response;
@@ -36,19 +40,37 @@ class RequestResponseInterceptor {
     /**
      * Log API request to daily file
      */
-    private function logApiRequest($request, $response, $startTime, $startMemory) {
+    private function logApiRequest($request, $response, $startTime, $startMemory, $requestId) {
         try {
             $executionTime = round((microtime(true) - $startTime) * 1000, 2); // ms
             $memoryUsage = memory_get_usage() - $startMemory;
-            $queryLog = config('app.log_queries', false) ? DB::getQueryLog() : [];
-            $queryCount = count($queryLog);
+
+            // Get query count from response meta if available, otherwise count from DB log
+            $queryCount = 0;
+            if (method_exists($response, 'getData')) {
+                $responseData = $response->getData(true);
+                if (isset($responseData['meta']['query_count'])) {
+                    $queryCount = $responseData['meta']['query_count'];
+                }
+            }
+
+            // Fallback to DB query log count
+            if ($queryCount === 0) {
+                $queryLog = DB::getQueryLog();
+                $queryCount = count($queryLog);
+            }
 
             $apiCredential = $this->getApiCredential($request);
+            $user = $this->getUser($request);
 
             $logData = [
+                'request_id' => $requestId,
                 'timestamp' => now()->toIso8601String(),
-                'api_credential_id' => $apiCredential?->id,
-                'api_key' => $apiCredential?->api_key ? substr($apiCredential->api_key, 0, 10) . '***' : null,
+                'api_credential_id' => $apiCredential?->id ? $this->encryptValue($apiCredential->id) : null,
+                'api_key' => $apiCredential?->api_key ? $this->encryptValue(substr($apiCredential->api_key, 0, 10) . '***') : null,
+                'user_id' => $user?->id,
+                'user_name' => $user?->name,
+                'user_email' => $user?->email,
                 'endpoint' => $request->path(),
                 'method' => $request->method(),
                 'request_payload' => $this->sanitizePayload($request->all()),
@@ -95,14 +117,28 @@ class RequestResponseInterceptor {
      * Write to daily log file
      */
     private function writeToDailyLogFile(string $logType, array $logData): void {
-        $date = now()->toDateString(); // YYYY-MM-DD
-        $logPath = "logs/{$logType}/{$date}.log";
+        try {
+            $date = now()->toDateString(); // YYYY-MM-DD
+            $logDir = storage_path("app/logs/{$logType}");
+            $logFile = "{$logDir}/{$date}.log";
 
-        // Convert to JSON (one line per request)
-        $jsonLine = json_encode($logData, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+            // Ensure directory exists
+            if (!is_dir($logDir)) {
+                mkdir($logDir, 0755, true);
+            }
 
-        // Append to file
-        Storage::disk('local')->append($logPath, $jsonLine);
+            // Convert to JSON (one line per request)
+            $jsonLine = json_encode($logData, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+
+            // Write to file directly
+            file_put_contents($logFile, $jsonLine, FILE_APPEND | LOCK_EX);
+        } catch (\Exception $e) {
+            Log::error('Failed to write to daily log file', [
+                'error' => $e->getMessage(),
+                'logFile' => $logFile ?? 'unknown',
+                'logType' => $logType
+            ]);
+        }
     }
 
     /**
@@ -121,6 +157,29 @@ class RequestResponseInterceptor {
     }
 
     /**
+     * Get authenticated user from request
+     */
+    private function getUser($request) {
+        // Try to get user from Sanctum authentication
+        if ($request->user()) {
+            return $request->user();
+        }
+
+        // Try to get user from session
+        if (auth()->check()) {
+            return auth()->user();
+        }
+
+        // Try to get user from API credential
+        $apiCredential = $this->getApiCredential($request);
+        if ($apiCredential && $apiCredential->user) {
+            return $apiCredential->user;
+        }
+
+        return null;
+    }
+
+    /**
      * Sanitize sensitive fields from payload
      */
     private function sanitizePayload(array $payload): array {
@@ -133,5 +192,17 @@ class RequestResponseInterceptor {
         }
 
         return $payload;
+    }
+
+    /**
+     * Encrypt sensitive values for logging
+     */
+    private function encryptValue($value): string {
+        try {
+            return Crypt::encryptString($value);
+        } catch (\Exception $e) {
+            // Fallback to simple hash if encryption fails
+            return 'encrypted_' . hash('sha256', $value . config('app.key'));
+        }
     }
 }
