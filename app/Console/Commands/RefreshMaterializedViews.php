@@ -27,7 +27,8 @@ class RefreshMaterializedViews extends Command
      */
     public function handle()
     {
-        $this->info('🔄 Starting materialized views refresh...');
+        $timestamp = now()->format('Y-m-d H:i:s');
+        $this->info("[{$timestamp}] 🔄 Starting materialized views refresh...");
         $startTime = microtime(true);
 
         try {
@@ -42,9 +43,10 @@ class RefreshMaterializedViews extends Command
             $this->refreshView('mv_re_id_masters_daily_stats', 'Re-ID masters daily statistics');
 
             $executionTime = (microtime(true) - $startTime) * 1000;
+            $endTimestamp = now()->format('Y-m-d H:i:s');
 
-            $this->info("✅ All materialized views refreshed successfully!");
-            $this->info("⏱️  Execution time: " . round($executionTime, 2) . "ms");
+            $this->info("[{$endTimestamp}] ✅ All materialized views refreshed successfully!");
+            $this->info("[{$endTimestamp}] ⏱️  Execution time: " . round($executionTime, 2) . "ms");
 
             // Log the refresh
             Log::info('Materialized views refreshed via command', [
@@ -70,13 +72,14 @@ class RefreshMaterializedViews extends Command
      */
     private function refreshView($viewName, $description)
     {
-        $this->line("🔄 Refreshing {$description}...");
+        $timestamp = now()->format('Y-m-d H:i:s');
+        $this->line("[{$timestamp}] 🔄 Refreshing {$description}...");
 
         try {
             DB::statement("REFRESH MATERIALIZED VIEW {$viewName}");
-            $this->info("✅ {$description} refreshed successfully");
+            $this->info("[{$timestamp}] ✅ {$description} refreshed successfully");
         } catch (\Exception $e) {
-            $this->error("❌ Failed to refresh {$description}: " . $e->getMessage());
+            $this->error("[{$timestamp}] ❌ Failed to refresh {$description}: " . $e->getMessage());
             throw $e;
         }
     }

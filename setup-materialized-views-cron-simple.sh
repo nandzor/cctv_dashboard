@@ -18,7 +18,7 @@ touch "$PROJECT_DIR/logs/db-maintenance.log"
 # Create crontab entries
 CRON_ENTRIES="
 # Materialized Views Refresh - Every 30 minutes
-*/30 * * * * docker exec $DOCKER_CONTAINER php artisan app:refresh-materialized-views >> $PROJECT_DIR/logs/materialized-views-refresh.log 2>&1
+*/30 * * * * docker exec $DOCKER_CONTAINER php artisan materialized-views:refresh >> $PROJECT_DIR/logs/materialized-views-refresh.log 2>&1
 
 # Cache Clear - Every 6 hours
 0 */6 * * * docker exec $DOCKER_CONTAINER php artisan cache:clear >> $PROJECT_DIR/logs/cache-clear.log 2>&1
@@ -48,4 +48,4 @@ echo ""
 echo "⚙️  To modify schedule, edit crontab: crontab -e"
 echo ""
 echo "🧪 Test the command manually:"
-echo "  docker exec $DOCKER_CONTAINER php artisan app:refresh-materialized-views"
+echo "  docker exec $DOCKER_CONTAINER php artisan materialized-views:refresh"
