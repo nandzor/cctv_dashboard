@@ -123,7 +123,7 @@ echo "Successful: $SUCCESS_COUNT"
 echo "Failed: $ERROR_COUNT"
 echo "Duration: ${DURATION}s"
 if [ "$DURATION" -gt 0 ]; then
-    echo "Average: $(echo "scale=2; ($SUCCESS_COUNT + $ERROR_COUNT) / $DURATION" | bc) requests/second"
+    echo "Average: $(awk "BEGIN {printf \"%.2f\", ($SUCCESS_COUNT + $ERROR_COUNT) / $DURATION}") requests/second"
 else
     echo "Average: N/A (Duration too short)"
 fi

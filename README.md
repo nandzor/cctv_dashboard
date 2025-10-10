@@ -69,55 +69,61 @@ START.bat
 - ✅ **Person Tracking (Re-ID)** - Person re-identification across branches
 - ✅ **CCTV Layouts** - Dynamic 4/6/8-window grid layouts (Admin only)
 - ✅ **CCTV Live Stream** - Position-based auto-save streaming
-- ✅ **Event Logs** - Real-time event monitoring
-- ✅ **Reports** - Daily & monthly analytics with detection trends
+- ✅ **Event Logs** - Real-time event monitoring with PDF export
+- ✅ **Reports** - Daily & monthly analytics with detection trends & PDF export
 - ✅ **User Management** - Role-based user administration
 - ✅ **API Credentials** - Secure API key management (Admin only) 🆕
+- ✅ **Branch Event Settings** - Per-device notification configuration 🆕
+- ✅ **WhatsApp Settings** - Global WhatsApp configuration (Admin only) 🆕
 
 ### **Advanced Features**
 
-- ✅ **Async Processing** - Queue-based background jobs (6 priority queues)
+- ✅ **Async Processing** - Queue-based background jobs (9 priority queues)
 - ✅ **WhatsApp Integration** - Automated notifications via WAHA
 - ✅ **Image Processing** - Auto-resize, watermark, thumbnails
-- ✅ **API Integration** - Complete RESTful API (7 detection endpoints)
+- ✅ **API Integration** - Complete RESTful API (20+ detection endpoints)
 - ✅ **API Credentials** - Global access, 10K/hour rate limit, test interface 🆕
 - ✅ **Rate Limiting** - Per-credential rate limiting with headers 🆕
 - ✅ **Performance Monitoring** - Query count, memory, execution time in responses
 - ✅ **Credential Caching** - 5-minute cache for API performance 🆕
 - ✅ **File Storage** - Centralized storage with registry
 - ✅ **Search & Filter** - All list views with pagination
-- ✅ **Export Functionality** - CSV export, print layouts
+- ✅ **Export Functionality** - CSV export, PDF export, print layouts
 - ✅ **Charts & Visualization** - ApexCharts with detection trends
-- ✅ **Reusable Components** - 24+ Blade components (x-button, x-card, etc.)
+- ✅ **Reusable Components** - 40+ Blade components (x-button, x-card, etc.)
 - ✅ **Device Encryption** - Auto-encrypt/decrypt device credentials
 - ✅ **Professional UI** - Inter font, smooth sidebar scroll, responsive design
+- ✅ **Standardized Status** - Unified active/inactive status component 🆕
+- ✅ **Form Validation** - Enhanced validation with no spaces in code fields 🆕
 
 ## 📊 Project Statistics
 
 | Metric                  | Count | Status  |
 | ----------------------- | ----- | ------- |
-| **Blade Views**         | 60+   | ✅ 100% |
-| **Blade Components**    | 24    | ✅ 100% |
-| **Controllers**         | 12    | ✅ 100% |
+| **Blade Views**         | 50    | ✅ 100% |
+| **Blade Components**    | 40    | ✅ 100% |
+| **Controllers**         | 16    | ✅ 100% |
 | **Models**              | 17    | ✅ 100% |
-| **Services**            | 8     | ✅ 100% |
-| **Middleware**          | 5     | ✅ 100% |
-| **Queue Jobs**          | 7     | ✅ 100% |
-| **API Endpoints**       | 24+   | ✅ 100% |
-| **Database Tables**     | 17    | ✅ 100% |
-| **Seeders**             | 8     | ✅ 100% |
+| **Services**            | 15    | ✅ 100% |
+| **Middleware**          | 5+    | ✅ 100% |
+| **Queue Jobs**          | 9     | ✅ 100% |
+| **API Endpoints**       | 20+   | ✅ 100% |
+| **Database Tables**     | 25    | ✅ 100% |
+| **Seeders**             | 13    | ✅ 100% |
 | **Documentation Files** | 25+   | ✅ 100% |
 
 **Latest Updates:**
 
-- ✅ API Credentials Management (Admin only)
-- ✅ Enhanced API middleware with rate limiting
-- ✅ Simplified credential creation (3 fields)
-- ✅ Built-in API testing interface
-- ✅ Badge component with all variants
-- ✅ Device encryption implemented
-- ✅ Inter font integrated
-- ✅ Professional sidebar with auto-scroll
+- ✅ **Standardized Status Component** - Unified active/inactive status across all modules
+- ✅ **Form Validation Enhancement** - No spaces allowed in code/id fields
+- ✅ **API Credentials Management** (Admin only)
+- ✅ **Enhanced API middleware** with rate limiting
+- ✅ **Simplified credential creation** (3 fields)
+- ✅ **Built-in API testing interface**
+- ✅ **Badge component** with all variants
+- ✅ **Device encryption** implemented
+- ✅ **Inter font** integrated
+- ✅ **Professional sidebar** with auto-scroll
 
 ---
 
@@ -131,47 +137,68 @@ app/
 │   ├── ReIdBranchDetection, EventLog
 │   ├── BranchEventSetting, ApiCredential
 │   ├── CctvLayoutSetting, CctvPositionSetting
-│   └── + 7 more...
+│   ├── CctvStream, WhatsAppSettings
+│   ├── ApiUsageSummary, WhatsAppDeliverySummary
+│   ├── CountingReport, StorageFile
+│   └── User
 │
 ├── Http/Controllers/
-│   ├── Web/ (8)              # Web controllers
+│   ├── Web/ (9)              # Web controllers
 │   │   ├── CompanyGroupController
 │   │   ├── CompanyBranchController
 │   │   ├── DeviceMasterController
 │   │   ├── ReIdMasterController
 │   │   ├── CctvLayoutController
+│   │   ├── CctvLiveStreamController
 │   │   ├── EventLogController
 │   │   ├── ReportController
-│   │   └── ApiCredentialController (🆕 Admin only)
+│   │   ├── UserController
+│   │   ├── ApiCredentialController (🆕 Admin only)
+│   │   ├── BranchEventSettingController
+│   │   └── WhatsAppSettingsController
 │   │
-│   └── Api/ (3)              # API controllers
+│   └── Api/V1/ (7)           # API controllers
 │       ├── AuthController
 │       ├── UserController
-│       └── DetectionController (7 endpoints)
+│       ├── DetectionController (7 endpoints)
+│       ├── ApiCredentialController
+│       ├── StaticAuthController
+│       └── TestController
 │
-├── Middleware/ (5)           # HTTP middleware
+├── Middleware/ (5+)          # HTTP middleware
 │   ├── AdminOnly            # Admin role verification
 │   ├── ApiKeyAuth           # API credential authentication 🆕
 │   ├── ApiResponseMiddleware
 │   ├── ValidateStaticToken
 │   └── HandleInertiaRequests
 │
-├── Services/ (8)             # Business logic layer
+├── Services/ (15)            # Business logic layer
 │   ├── CompanyGroupService
 │   ├── CompanyBranchService
 │   ├── DeviceMasterService
 │   ├── ReIdMasterService
 │   ├── CctvLayoutService
 │   ├── ApiCredentialService  # 🆕 API credential management
+│   ├── BranchEventSettingService
+│   ├── WhatsAppSettingsService
+│   ├── EventLogService
+│   ├── ReportService
+│   ├── UserService
+│   ├── AuthService
+│   ├── BaseExportService
 │   ├── LoggingService
 │   └── BaseService
 │
-├── Jobs/ (7)                 # Queue jobs
+├── Jobs/ (9)                 # Queue jobs
 │   ├── ProcessDetectionJob
 │   ├── SendWhatsAppNotificationJob
 │   ├── ProcessDetectionImageJob
 │   ├── UpdateDailyReportJob
-│   └── + 3 more...
+│   ├── UpdateMonthlyReportJob
+│   ├── CleanupOldFilesJob
+│   ├── AggregateApiUsageJob
+│   ├── AggregateWhatsAppDeliveryJob
+│   └── ProcessCCTVData
 │
 └── Helpers/ (5)              # Helper functions
     ├── ApiResponseHelper
@@ -180,19 +207,23 @@ app/
     ├── WhatsAppHelper
     └── helpers.php
 
-resources/views/ (56 blade files)
+resources/views/ (50 blade files)
 ├── auth/ (2)
 ├── dashboard/ (1)
 ├── company-groups/ (4)
 ├── company-branches/ (4)
 ├── device-masters/ (4)
-├── re-id-masters/ (2)
+├── re-id-masters/ (3)
 ├── cctv-layouts/ (4)
-├── event-logs/ (2)
-├── reports/ (3)
+├── cctv-live-stream/ (1)
+├── event-logs/ (3)
+├── reports/ (6)
 ├── users/ (4)
+├── api-credentials/ (5)
+├── branch-event-settings/ (3)
+├── whatsapp-settings/ (4)
 ├── layouts/ (2)
-└── components/ (24)
+└── components/ (40)
 ```
 
 ## 💻 System Requirements
@@ -827,7 +858,14 @@ php artisan view:clear
 
 ---
 
-## 🆕 Latest Features (October 2025)
+## 🆕 Latest Features (December 2024)
+
+### **UI/UX Standardization**
+
+- ✅ **Standardized Status Component** - Unified active/inactive status across all modules
+- ✅ **Form Validation Enhancement** - No spaces allowed in code/id fields (device_id, province_code, branch_code, email)
+- ✅ **Consistent Component Usage** - All modules now use standardized components
+- ✅ **Enhanced User Experience** - Better form validation and user feedback
 
 ### **API Credentials Management**
 
@@ -882,8 +920,8 @@ php artisan view:clear
 
 ### **Backend**
 
-- **Framework:** Laravel 12.32.5
-- **Language:** PHP 8.4.13
+- **Framework:** Laravel 11
+- **Language:** PHP 8.2+
 - **Database:** PostgreSQL 15+
 - **Cache:** Redis (recommended) or File
 - **Queue:** Database driver with Supervisor
@@ -967,19 +1005,31 @@ php artisan queue:work --queue=detections,notifications,images,reports,maintenan
 
 ### **Supervisor Configuration**
 
-See `docs/database_plan_en.md` for complete supervisor setup.
+See **[database_plan_en.md](docs/core/database_plan_en.md)** for complete supervisor setup and queue worker configuration.
 
 ---
 
 ## 📞 Support & Resources
 
-### **Documentation**
+### **📚 Complete Documentation**
 
-- 📖 **API Reference:** `docs/API_REFERENCE.md`
-- 🔑 **API Credentials:** `docs/API_CREDENTIALS_INTEGRATION.md`
-- 🏗️ **Architecture:** `docs/APPLICATION_PLAN.md`
-- 🗄️ **Database:** `docs/database_plan_en.md`
-- 🔄 **Workflows:** `docs/SEQUENCE_DIAGRAMS.md`
+#### **Core Documentation (docs/core/)**
+
+- 📡 **[API_REFERENCE.md](docs/core/API_REFERENCE.md)** - Complete API reference with all endpoints, authentication, rate limiting, and examples
+- 📱 **[APPLICATION_PLAN.md](docs/core/APPLICATION_PLAN.md)** - Comprehensive application architecture, workflows, and user roles
+- 🗄️ **[database_plan_en.md](docs/core/database_plan_en.md)** - Database schema, migrations, indexes, and optimization
+- 🔄 **[SEQUENCE_DIAGRAMS.md](docs/core/SEQUENCE_DIAGRAMS.md)** - System workflows and sequence diagrams
+
+#### **API Documentation**
+
+- 🎯 **[API_DETECTION_DOCUMENTATION.md](docs/API_DETECTION_DOCUMENTATION.md)** - Detection API legacy docs with complete examples
+- 🔑 **[API_CREDENTIALS_INTEGRATION.md](docs/API_CREDENTIALS_INTEGRATION.md)** - API credential management guide
+
+#### **Technical Documentation**
+
+- 🏗️ **[BACKEND_COMPLETION_SUMMARY.md](docs/BACKEND_COMPLETION_SUMMARY.md)** - Backend development summary and features
+- 🧩 **[COMPONENTS.md](docs/COMPONENTS.md)** - Blade components documentation
+- 📊 **[COMPREHENSIVE_SUMMARY.md](docs/COMPREHENSIVE_SUMMARY.md)** - Complete project overview and statistics
 
 ### **Quick Links**
 
