@@ -144,9 +144,20 @@ func generateRow(baseDay time.Time, useRandomDevices bool) detectionRow {
     }
 
     ts := baseDay.Add(time.Duration(mathrand.Intn(24))*time.Hour).Add(time.Duration(mathrand.Intn(60))*time.Minute)
-    count := int32(mathrand.Intn(3) + 1)
-    // Keep JSON small to reduce IO
-    json := fmt.Sprintf(`{"confidence":%.2f,"frame":%d}`, 0.85+mathrand.Float64()*0.14, 1000+mathrand.Intn(9000))
+
+    // Always set detected_count to 1 as per requirement
+    // This matches the branch_event_settings expectation where each detection is counted as 1
+    count := int32(1)
+
+    // Keep JSON small to reduce IO but include relevant detection data
+    json := fmt.Sprintf(`{"confidence":%.2f,"frame":%d,"detection_type":"person","bounding_box":{"x":%d,"y":%d,"width":%d,"height":%d}}`,
+        0.85+mathrand.Float64()*0.14,
+        1000+mathrand.Intn(9000),
+        mathrand.Intn(200)+50,  // x coordinate
+        mathrand.Intn(200)+50,  // y coordinate
+        mathrand.Intn(100)+50,  // width
+        mathrand.Intn(100)+50)  // height
+
     return detectionRow{
         reID:               randomReID(),
         branchID:           branch,

@@ -21,6 +21,9 @@ echo "- Rows: 200,000,000"
 echo "- Workers: 32"
 echo "- Batch Size: 20,000"
 echo "- Skip FK Check: Yes (for speed)"
+echo "- Detected Count: Always 1 (matches branch_event_settings)"
+echo "- Device IDs: Predefined (CAM_JKT001_001, etc.)"
+echo "- Branch IDs: 1,2,3,4,5,6,7"
 echo ""
 
 # Ask for confirmation
