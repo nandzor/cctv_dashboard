@@ -179,23 +179,25 @@ class ReportController extends Controller
     {
         $startTime = microtime(true);
 
-        // HYBRID APPROACH: Use materialized views for historical data + realtime for today
-        $isToday = $dateTo === now()->toDateString();
-        $daysDiff = \Carbon\Carbon::parse($dateTo)->diffInDays(now());
-        $isRecent = $daysDiff <= 1; // Today or yesterday (inclusive)
+        // OPTIMIZED APPROACH: Use materialized views for ALL data (including today)
+        // Materialized views are refreshed every 30 minutes, so they're fresh enough
 
-        // Fix: Use floor to handle decimal days
-        $isRecent = floor($daysDiff) <= 1;
+        // Check if materialized view has data for today
+        $hasTodayData = DB::selectOne("
+            SELECT COUNT(*) as count
+            FROM mv_daily_detection_stats
+            WHERE detection_date = ?
+            LIMIT 1
+        ", [now()->toDateString()]);
 
-
-        if ($isToday || $isRecent) {
-            // REALTIME MODE: Use raw queries for today/recent data
-            Log::info('Using REALTIME mode', ['date_to' => $dateTo]);
-            return $this->getRealtimeDashboardData($dateFrom, $dateTo, $branchId);
-        } else {
-            // HISTORICAL MODE: Use materialized views for fast performance
-            Log::info('Using HISTORICAL mode', ['date_to' => $dateTo]);
+        if ($hasTodayData && $hasTodayData->count > 0) {
+            // MATERIALIZED VIEW MODE: Use fast materialized views for all data
+            Log::info('Using MATERIALIZED VIEW mode', ['date_to' => $dateTo, 'has_today_data' => true]);
             return $this->getHistoricalDashboardData($dateFrom, $dateTo, $branchId);
+        } else {
+            // FALLBACK MODE: Use realtime queries if materialized view not ready
+            Log::info('Using REALTIME FALLBACK mode', ['date_to' => $dateTo, 'has_today_data' => false]);
+            return $this->getRealtimeDashboardData($dateFrom, $dateTo, $branchId);
         }
     }
 
