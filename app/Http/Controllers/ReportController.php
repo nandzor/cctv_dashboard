@@ -163,13 +163,31 @@ class ReportController extends Controller {
     }
 
     /**
-     * Get EXTREME-optimized dashboard data using minimal queries
-     * This method uses the FASTEST possible approach for maximum performance
+     * Get HYBRID-optimized dashboard data: Materialized views + Realtime data
+     * This method combines FAST materialized views with REALTIME data for today
      */
     private function getOptimizedDashboardData($dateFrom, $dateTo, $branchId = null) {
         $startTime = microtime(true);
 
-        // EXTREME OPTIMIZATION: Use separate fast queries instead of complex CTE
+        // HYBRID APPROACH: Use materialized views for historical data + realtime for today
+        $isToday = $dateTo === now()->toDateString();
+        $isRecent = \Carbon\Carbon::parse($dateTo)->diffInDays(now()) <= 1;
+
+        if ($isRecent) {
+            // REALTIME MODE: Use raw queries for today/recent data
+            return $this->getRealtimeDashboardData($dateFrom, $dateTo, $branchId);
+        } else {
+            // HISTORICAL MODE: Use materialized views for fast performance
+            return $this->getHistoricalDashboardData($dateFrom, $dateTo, $branchId);
+        }
+    }
+
+    /**
+     * Get realtime dashboard data using raw queries (for today/recent data)
+     */
+    private function getRealtimeDashboardData($dateFrom, $dateTo, $branchId = null) {
+        $startTime = microtime(true);
+
         $whereClause = "detection_timestamp BETWEEN ? AND ?";
         $params = [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'];
 
@@ -178,7 +196,54 @@ class ReportController extends Controller {
             $params[] = $branchId;
         }
 
-        // EXTREME OPTIMIZATION: Use materialized views for maximum speed
+        // 1. Get basic stats with optimized raw query (REALTIME)
+        $statsQuery = "
+            SELECT
+                COUNT(*) as total_detections,
+                COUNT(DISTINCT re_id) as unique_persons,
+                COUNT(DISTINCT branch_id) as unique_branches,
+                COUNT(DISTINCT device_id) as unique_devices
+            FROM re_id_branch_detections
+            WHERE {$whereClause}
+        ";
+
+        $stats = DB::select($statsQuery, $params)[0];
+
+        // 2. Get daily trend with optimized raw query (REALTIME)
+        $dailyQuery = "
+            SELECT
+                DATE(detection_timestamp) as date,
+                COUNT(*) as count
+            FROM re_id_branch_detections
+            WHERE {$whereClause}
+            GROUP BY DATE(detection_timestamp)
+            ORDER BY DATE(detection_timestamp)
+        ";
+
+        $dailyData = DB::select($dailyQuery, $params);
+
+        // 3. Get top branches with optimized raw query (REALTIME)
+        $topBranchesQuery = "
+            SELECT
+                branch_id,
+                COUNT(*) as detection_count
+            FROM re_id_branch_detections
+            WHERE {$whereClause}
+            GROUP BY branch_id
+            ORDER BY COUNT(*) DESC
+            LIMIT 5
+        ";
+
+        $topBranchesData = DB::select($topBranchesQuery, $params);
+
+        return $this->processDashboardResults($stats, $dailyData, $topBranchesData, $dateFrom, $dateTo, $branchId, 'REALTIME', $startTime);
+    }
+
+    /**
+     * Get historical dashboard data using materialized views (for old data)
+     */
+    private function getHistoricalDashboardData($dateFrom, $dateTo, $branchId = null) {
+        $startTime = microtime(true);
 
         // 1. Get basic stats from materialized view (ULTRA FAST)
         $statsQuery = "
@@ -235,6 +300,13 @@ class ReportController extends Controller {
 
         $topBranchesData = DB::select($topBranchesQuery, $topBranchesParams);
 
+        return $this->processDashboardResults($stats, $dailyData, $topBranchesData, $dateFrom, $dateTo, $branchId, 'HISTORICAL', $startTime);
+    }
+
+    /**
+     * Process dashboard results (common for both realtime and historical)
+     */
+    private function processDashboardResults($stats, $dailyData, $topBranchesData, $dateFrom, $dateTo, $branchId, $mode, $startTime) {
         // Process results efficiently
         $dailyTrend = collect();
         $maxDailyCount = 0;
@@ -274,14 +346,14 @@ class ReportController extends Controller {
 
         $executionTime = (microtime(true) - $startTime) * 1000;
 
-        // Log performance metrics
-        Log::info('EXTREME-optimized dashboard query executed', [
+        // Log performance metrics with mode
+        Log::info("HYBRID-optimized dashboard query executed ({$mode})", [
             'execution_time' => round($executionTime, 2) . 'ms',
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
             'branch_id' => $branchId,
-            'query_type' => 'separate_fast_queries',
-            'performance_boost' => 'EXTREME_FAST'
+            'query_mode' => $mode,
+            'performance_boost' => $mode === 'REALTIME' ? 'REALTIME_FAST' : 'HISTORICAL_ULTRA_FAST'
         ]);
 
         return [
@@ -291,7 +363,9 @@ class ReportController extends Controller {
             'uniqueDevices' => (int) $stats->unique_devices,
             'dailyTrend' => $dailyTrend,
             'maxDailyCount' => $maxDailyCount ?: 1,
-            'topBranches' => $topBranchesWithNames
+            'topBranches' => $topBranchesWithNames,
+            'dataMode' => $mode, // Add mode info for debugging
+            'isRealtime' => $mode === 'REALTIME'
         ];
     }
 
@@ -332,6 +406,57 @@ class ReportController extends Controller {
             'cache_hit_rate' => '95%',
             'query_count' => '1_query_total'
         ];
+    }
+
+    /**
+     * Refresh materialized views for optimal performance
+     */
+    public function refreshMaterializedViews()
+    {
+        $startTime = microtime(true);
+
+        try {
+            // Refresh all materialized views
+            $views = [
+                'mv_daily_detection_stats' => 'Daily detection statistics',
+                'mv_branch_detection_stats' => 'Branch detection statistics',
+                'mv_event_logs_daily_stats' => 'Event logs daily statistics',
+                'mv_event_logs_branch_stats' => 'Event logs branch statistics',
+                'mv_re_id_masters_daily_stats' => 'Re-ID masters daily statistics',
+                'mv_re_id_masters_branch_stats' => 'Re-ID masters branch statistics'
+            ];
+
+            foreach ($views as $view => $description) {
+                DB::statement("REFRESH MATERIALIZED VIEW {$view}");
+                Log::info("Materialized view refreshed: {$description}");
+            }
+
+            $executionTime = (microtime(true) - $startTime) * 1000;
+
+            Log::info('All materialized views refreshed successfully', [
+                'execution_time' => round($executionTime, 2) . 'ms',
+                'views_count' => count($views),
+                'timestamp' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'All materialized views refreshed successfully',
+                'execution_time' => round($executionTime, 2) . 'ms',
+                'views_refreshed' => count($views)
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to refresh materialized views', [
+                'error' => $e->getMessage(),
+                'timestamp' => now()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to refresh materialized views: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
 }
