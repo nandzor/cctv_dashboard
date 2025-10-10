@@ -16,14 +16,14 @@ return new class extends Migration {
         DB::statement("
             CREATE INDEX IF NOT EXISTS idx_re_id_branch_detections_mega_covering
             ON re_id_branch_detections(detection_timestamp, branch_id, re_id, device_id)
-            INCLUDE (detected_count)
         ");
 
         // 2. Partial index for recent data (last 90 days) - most common queries
+        // Use fixed date to avoid IMMUTABLE function requirement
         DB::statement("
             CREATE INDEX IF NOT EXISTS idx_re_id_branch_detections_recent_90_days
             ON re_id_branch_detections(detection_timestamp, branch_id, re_id, device_id)
-            WHERE detection_timestamp >= CURRENT_DATE - INTERVAL '90 days'
+            WHERE detection_timestamp >= '2024-01-01'::date
         ");
 
         // 3. Hash index for exact branch lookups (ultra fast)
@@ -32,11 +32,11 @@ return new class extends Migration {
             ON re_id_branch_detections USING HASH (branch_id)
         ");
 
-        // 4. GIN index for JSONB detection_data (if exists)
-        DB::statement("
-            CREATE INDEX IF NOT EXISTS idx_re_id_branch_detections_data_gin
-            ON re_id_branch_detections USING GIN (detection_data)
-        ");
+        // 4. GIN index for JSONB detection_data (if exists) - SKIP if column doesn't exist
+        // DB::statement("
+        //     CREATE INDEX IF NOT EXISTS idx_re_id_branch_detections_data_gin
+        //     ON re_id_branch_detections USING GIN (detection_data)
+        // ");
 
         // 5. Composite index for date range + branch filtering (most common pattern)
         DB::statement("
@@ -45,9 +45,10 @@ return new class extends Migration {
         ");
 
         // 6. Index for daily aggregation queries
+        // Use expression index with immutable function
         DB::statement("
             CREATE INDEX IF NOT EXISTS idx_re_id_branch_detections_daily_agg
-            ON re_id_branch_detections(DATE(detection_timestamp), branch_id, re_id)
+            ON re_id_branch_detections((detection_timestamp::date), branch_id, re_id)
         ");
 
         // 7. Index for branch statistics (top branches)
@@ -76,17 +77,83 @@ return new class extends Migration {
             INCLUDE (total_detections, unique_person_count, total_events)
         ");
 
-        // 11. Analyze tables for better query planning
+        // 11. ULTRA-PERFORMANCE INDEXES for event_logs table
+        DB::statement("
+            CREATE INDEX IF NOT EXISTS idx_event_logs_timestamp_branch
+            ON event_logs(event_timestamp, branch_id, event_type)
+        ");
+
+        DB::statement("
+            CREATE INDEX IF NOT EXISTS idx_event_logs_daily_agg
+            ON event_logs((event_timestamp::date), branch_id, event_type)
+        ");
+
+        DB::statement("
+            CREATE INDEX IF NOT EXISTS idx_event_logs_branch_stats
+            ON event_logs(branch_id, event_timestamp DESC, event_type)
+        ");
+
+        DB::statement("
+            CREATE INDEX IF NOT EXISTS idx_event_logs_event_type_hash
+            ON event_logs USING HASH (event_type)
+        ");
+
+        DB::statement("
+            CREATE INDEX IF NOT EXISTS idx_event_logs_brin_timestamp
+            ON event_logs USING BRIN (event_timestamp)
+        ");
+
+        // 12. ULTRA-PERFORMANCE INDEXES for re_id_masters table
+        DB::statement("
+            CREATE INDEX IF NOT EXISTS idx_re_id_masters_re_id_hash
+            ON re_id_masters USING HASH (re_id)
+        ");
+
+        DB::statement("
+            CREATE INDEX IF NOT EXISTS idx_re_id_masters_branch_status
+            ON re_id_masters(branch_id, status, created_at DESC)
+        ");
+
+        DB::statement("
+            CREATE INDEX IF NOT EXISTS idx_re_id_masters_created_at
+            ON re_id_masters(created_at DESC, branch_id)
+        ");
+
+        DB::statement("
+            CREATE INDEX IF NOT EXISTS idx_re_id_masters_status_active
+            ON re_id_masters(re_id, branch_id)
+            WHERE status = 'active'
+        ");
+
+        DB::statement("
+            CREATE INDEX IF NOT EXISTS idx_re_id_masters_brin_created
+            ON re_id_masters USING BRIN (created_at)
+        ");
+
+        // 13. Composite indexes for cross-table joins
+        DB::statement("
+            CREATE INDEX IF NOT EXISTS idx_re_id_masters_branch_re_id
+            ON re_id_masters(branch_id, re_id, status)
+        ");
+
+        DB::statement("
+            CREATE INDEX IF NOT EXISTS idx_event_logs_re_id_branch
+            ON event_logs(re_id, branch_id, event_timestamp DESC)
+        ");
+
+        // 14. Analyze tables for better query planning
         DB::statement("ANALYZE re_id_branch_detections");
         DB::statement("ANALYZE company_branches");
         DB::statement("ANALYZE counting_reports");
+        DB::statement("ANALYZE event_logs");
+        DB::statement("ANALYZE re_id_masters");
     }
 
     /**
      * Reverse the migrations.
      */
     public function down(): void {
-        // Drop all ultra-performance indexes
+        // Drop all ultra-performance indexes for re_id_branch_detections
         DB::statement("DROP INDEX IF EXISTS idx_re_id_branch_detections_mega_covering");
         DB::statement("DROP INDEX IF EXISTS idx_re_id_branch_detections_recent_90_days");
         DB::statement("DROP INDEX IF EXISTS idx_re_id_branch_detections_branch_hash");
@@ -97,5 +164,21 @@ return new class extends Migration {
         DB::statement("DROP INDEX IF EXISTS idx_re_id_branch_detections_brin_ultra");
         DB::statement("DROP INDEX IF EXISTS idx_company_branches_ultra_optimized");
         DB::statement("DROP INDEX IF EXISTS idx_counting_reports_ultra_optimized");
+        
+        // Drop all ultra-performance indexes for event_logs
+        DB::statement("DROP INDEX IF EXISTS idx_event_logs_timestamp_branch");
+        DB::statement("DROP INDEX IF EXISTS idx_event_logs_daily_agg");
+        DB::statement("DROP INDEX IF EXISTS idx_event_logs_branch_stats");
+        DB::statement("DROP INDEX IF EXISTS idx_event_logs_event_type_hash");
+        DB::statement("DROP INDEX IF EXISTS idx_event_logs_brin_timestamp");
+        DB::statement("DROP INDEX IF EXISTS idx_event_logs_re_id_branch");
+        
+        // Drop all ultra-performance indexes for re_id_masters
+        DB::statement("DROP INDEX IF EXISTS idx_re_id_masters_re_id_hash");
+        DB::statement("DROP INDEX IF EXISTS idx_re_id_masters_branch_status");
+        DB::statement("DROP INDEX IF EXISTS idx_re_id_masters_created_at");
+        DB::statement("DROP INDEX IF EXISTS idx_re_id_masters_status_active");
+        DB::statement("DROP INDEX IF EXISTS idx_re_id_masters_brin_created");
+        DB::statement("DROP INDEX IF EXISTS idx_re_id_masters_branch_re_id");
     }
 };
