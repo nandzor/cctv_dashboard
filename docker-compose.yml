@@ -8,8 +8,6 @@ services:
     container_name: cctv_app
     ports:
       - "9001:80"
-      # Port 443 untuk HTTPS jika Caddy mengelolanya secara otomatis
-      - "7443:443"
     volumes:
       # Mount seluruh project untuk development (sync dengan host)
       - .:/app

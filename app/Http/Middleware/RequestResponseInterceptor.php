@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\ApiCredential;
@@ -22,6 +23,11 @@ class RequestResponseInterceptor {
 
         // Generate unique request ID
         $requestId = Str::uuid()->toString();
+
+        // Capture original request payload BEFORE merging request_id
+        $originalPayload = $request->all();
+
+        // Add request_id to request for tracking
         $request->merge(['request_id' => $requestId]);
 
         // Always enable query logging for API requests to track query count
@@ -31,7 +37,7 @@ class RequestResponseInterceptor {
 
         // Log API requests only
         if ($request->is('api/*')) {
-            $this->logApiRequest($request, $response, $startTime, $startMemory, $requestId);
+            $this->logApiRequest($request, $response, $startTime, $startMemory, $requestId, $originalPayload);
         }
 
         return $response;
@@ -40,7 +46,7 @@ class RequestResponseInterceptor {
     /**
      * Log API request to daily file
      */
-    private function logApiRequest($request, $response, $startTime, $startMemory, $requestId) {
+    private function logApiRequest($request, $response, $startTime, $startMemory, $requestId, $originalPayload = []) {
         try {
             $executionTime = round((microtime(true) - $startTime) * 1000, 2); // ms
             $memoryUsage = memory_get_usage() - $startMemory;
@@ -63,18 +69,24 @@ class RequestResponseInterceptor {
             $apiCredential = $this->getApiCredential($request);
             $user = $this->getUser($request);
 
+            // Capture response payload
+            $responsePayload = $this->getResponsePayload($response);
+
             $logData = [
                 'request_id' => $requestId,
                 'timestamp' => now()->toIso8601String(),
-                'api_credential_id' => $apiCredential?->id ? $this->encryptValue($apiCredential->id) : null,
-                'api_key' => $apiCredential?->api_key ? $this->encryptValue(substr($apiCredential->api_key, 0, 10) . '***') : null,
+                'api_secret' => $apiCredential?->api_secret ? substr($apiCredential->api_secret, 0, 10) . '***' : null,
+                'api_key' => $apiCredential?->api_key ? substr($apiCredential->api_key, 0, 10) . '***' : null,
                 'user_id' => $user?->id,
                 'user_name' => $user?->name,
                 'user_email' => $user?->email,
                 'endpoint' => $request->path(),
                 'method' => $request->method(),
-                'request_payload' => $this->sanitizePayload($request->all()),
+                'request_payload' => $this->sanitizePayload($originalPayload),
+                'request_headers' => $this->sanitizeHeaders($request->headers->all()),
                 'response_status' => $response->getStatusCode(),
+                'response_payload' => $responsePayload,
+                'response_headers' => $this->sanitizeHeaders($response->headers->all()),
                 'response_time_ms' => (int) $executionTime,
                 'query_count' => $queryCount,
                 'memory_usage_mb' => round($memoryUsage / 1024 / 1024, 2),
@@ -161,13 +173,8 @@ class RequestResponseInterceptor {
      */
     private function getUser($request) {
         // Try to get user from Sanctum authentication
-        if ($request->user()) {
-            return $request->user();
-        }
-
-        // Try to get user from session
-        if (auth()->check()) {
-            return auth()->user();
+        if (Auth::check()) {
+            return Auth::user();
         }
 
         // Try to get user from API credential
@@ -192,6 +199,56 @@ class RequestResponseInterceptor {
         }
 
         return $payload;
+    }
+
+    /**
+     * Sanitize sensitive headers
+     */
+    private function sanitizeHeaders(array $headers): array {
+        $sensitiveHeaders = [
+            'authorization', 'x-api-key', 'x-auth-token', 'cookie',
+            'x-csrf-token', 'x-forwarded-for', 'x-real-ip'
+        ];
+
+        $sanitized = [];
+        foreach ($headers as $key => $value) {
+            $lowerKey = strtolower($key);
+            if (in_array($lowerKey, $sensitiveHeaders)) {
+                $sanitized[$key] = ['***REDACTED***'];
+            } else {
+                $sanitized[$key] = $value;
+            }
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * Get response payload from response object
+     */
+    private function getResponsePayload($response): array {
+        try {
+            // For JSON responses
+            if ($response instanceof \Illuminate\Http\JsonResponse) {
+                $data = $response->getData(true);
+                return is_array($data) ? $data : ['raw' => $data];
+            }
+
+            // For other responses, get content
+            $content = $response->getContent();
+
+            // Try to decode as JSON
+            $decoded = json_decode($content, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $decoded;
+            }
+
+            // Return as string if not JSON
+            return ['content' => $content];
+
+        } catch (\Exception $e) {
+            return ['error' => 'Failed to capture response payload', 'message' => $e->getMessage()];
+        }
     }
 
     /**
