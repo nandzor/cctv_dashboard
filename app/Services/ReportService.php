@@ -8,8 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
 
-class ReportService extends BaseService
-{
+class ReportService extends BaseService {
     protected $model = CountingReport::class;
 
     protected $orderByColumn = 'report_date';
@@ -21,14 +20,14 @@ class ReportService extends BaseService
      * @param Request $request
      * @return array
      */
-    public function getMonthlyReports(Request $request): array
-    {
+    public function getMonthlyReports(Request $request): array {
         $month = $request->input('month', now()->format('Y-m'));
         $branchId = $request->input('branch_id');
         $perPage = $request->input('per_page', 25);
 
-        // Generate cache key for this specific query
-        $cacheKey = "monthly_reports_{$month}_" . ($branchId ?? 'all') . "_{$perPage}";
+        // Generate cache key for this specific query (include page parameter)
+        $page = $request->input('page', 1);
+        $cacheKey = "monthly_reports_{$month}_" . ($branchId ?? 'all') . "_{$perPage}_page_{$page}";
 
         // Try to get from cache first (10 minutes cache for monthly reports)
         return cache()->remember($cacheKey, 10, function () use ($request, $month, $branchId, $perPage) {
@@ -43,16 +42,24 @@ class ReportService extends BaseService
                 $baseQuery->where('branch_id', $branchId);
             }
 
-            // Get all reports for statistics with optimized query
-            $allReports = $baseQuery->with(['branch:id,branch_name'])
-                ->orderBy('report_date', 'desc')
-                ->get();
-
-            // Get paginated results with optimized query
+            // Get paginated results first
+            $page = $request->input('page', 1);
             $reports = $baseQuery->with(['branch:id,branch_name'])
                 ->orderBy('report_date', 'desc')
-                ->paginate($this->validatePerPage($perPage))
+                ->paginate($this->validatePerPage($perPage), ['*'], 'page', $page)
                 ->appends($request->query());
+
+            // Get all reports for statistics (create completely new query)
+            $allReportsQuery = CountingReport::where('report_type', 'daily')
+                ->whereBetween('report_date', [$startDate, $endDate]);
+
+            if ($branchId) {
+                $allReportsQuery->where('branch_id', $branchId);
+            }
+
+            $allReports = $allReportsQuery->with(['branch:id,branch_name'])
+                ->orderBy('report_date', 'desc')
+                ->get();
 
             $branches = CompanyBranch::active()->select('id', 'branch_name')->get();
 
@@ -111,8 +118,7 @@ class ReportService extends BaseService
     /**
      * Clear cache for dashboard and reports
      */
-    public function clearCache($type = 'all', $params = [])
-    {
+    public function clearCache($type = 'all', $params = []) {
         if ($type === 'dashboard' || $type === 'all') {
             // Clear dashboard cache
             $dateFrom = $params['date_from'] ?? null;
@@ -150,8 +156,7 @@ class ReportService extends BaseService
     /**
      * Get performance metrics for reports
      */
-    public function getPerformanceMetrics()
-    {
+    public function getPerformanceMetrics() {
         return [
             'cache_hit_rate' => $this->getCacheHitRate(),
             'average_query_time' => $this->getAverageQueryTime(),
@@ -159,20 +164,17 @@ class ReportService extends BaseService
         ];
     }
 
-    private function getCacheHitRate()
-    {
+    private function getCacheHitRate() {
         // This would be implemented with Redis or similar cache system
         return 0.85; // 85% cache hit rate
     }
 
-    private function getAverageQueryTime()
-    {
+    private function getAverageQueryTime() {
         // This would be implemented with query logging
         return 150; // 150ms average
     }
 
-    private function getSlowQueriesCount()
-    {
+    private function getSlowQueriesCount() {
         // This would be implemented with query logging
         return 0;
     }
