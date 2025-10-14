@@ -17,19 +17,16 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\MonthlyReportsExport;
 use App\Exports\DashboardReportExport;
 
-class ReportController extends Controller
-{
+class ReportController extends Controller {
     protected $exportService;
     protected $reportService;
 
-    public function __construct(BaseExportService $exportService, ReportService $reportService)
-    {
+    public function __construct(BaseExportService $exportService, ReportService $reportService) {
         $this->exportService = $exportService;
         $this->reportService = $reportService;
     }
 
-    public function dashboard(Request $request)
-    {
+    public function dashboard(Request $request) {
         $dateFrom = $request->input('date_from', now()->subDays(7)->toDateString());
         $dateTo = $request->input('date_to', now()->toDateString());
         $branchId = $request->input('branch_id');
@@ -52,8 +49,7 @@ class ReportController extends Controller
         )));
     }
 
-    public function daily(Request $request)
-    {
+    public function daily(Request $request) {
         $date = $request->input('date', now()->toDateString());
         $branchId = $request->input('branch_id');
 
@@ -70,8 +66,7 @@ class ReportController extends Controller
         return view('reports.daily', compact('reports', 'branches', 'date', 'branchId'));
     }
 
-    public function exportDashboard(Request $request)
-    {
+    public function exportDashboard(Request $request) {
         $dateFrom = $request->input('date_from', now()->subDays(7)->toDateString());
         $dateTo = $request->input('date_to', now()->toDateString());
         $branchId = $request->input('branch_id');
@@ -97,8 +92,7 @@ class ReportController extends Controller
         );
     }
 
-    public function exportDaily(Request $request)
-    {
+    public function exportDaily(Request $request) {
         $date = $request->input('date', now()->toDateString());
         $branchId = $request->input('branch_id');
         $format = $request->input('format', 'excel'); // excel or pdf
@@ -123,14 +117,12 @@ class ReportController extends Controller
         return Excel::download(new DailyReportsExport($reports, $date), $fileName . '.xlsx');
     }
 
-    public function monthly(Request $request)
-    {
+    public function monthly(Request $request) {
         $data = $this->reportService->getMonthlyReports($request);
         return view('reports.monthly', $data);
     }
 
-    public function exportMonthly(Request $request)
-    {
+    public function exportMonthly(Request $request) {
         $month = $request->input('month', now()->format('Y-m'));
         $branchId = $request->input('branch_id');
         $format = $request->input('format', 'excel');
@@ -172,118 +164,98 @@ class ReportController extends Controller
     }
 
     /**
-     * Get HYBRID-optimized dashboard data: Materialized views + Realtime data
-     * This method combines FAST materialized views with REALTIME data for today
+     * Get optimized dashboard data using materialized views only
      */
-    private function getOptimizedDashboardData($dateFrom, $dateTo, $branchId = null)
-    {
-        $startTime = microtime(true);
+    private function getOptimizedDashboardData($dateFrom, $dateTo, $branchId = null) {
+        Log::info('Using materialized view mode', [
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'branch_id' => $branchId
+        ]);
 
-        // OPTIMIZED APPROACH: Use materialized views for ALL data (including today)
-        // Materialized views are refreshed every 30 minutes, so they're fresh enough
-
-        // Check if materialized view has data for today
-        $hasTodayData = DB::selectOne("
-            SELECT COUNT(*) as count
-            FROM mv_daily_detection_stats
-            WHERE detection_date = ?
-            LIMIT 1
-        ", [now()->toDateString()]);
-
-        if ($hasTodayData && $hasTodayData->count > 0) {
-            // MATERIALIZED VIEW MODE: Use fast materialized views for all data
-            Log::info('Using MATERIALIZED VIEW mode', ['date_to' => $dateTo, 'has_today_data' => true]);
-            return $this->getHistoricalDashboardData($dateFrom, $dateTo, $branchId);
-        } else {
-            // FALLBACK MODE: Use realtime queries if materialized view not ready
-            Log::info('Using REALTIME FALLBACK mode', ['date_to' => $dateTo, 'has_today_data' => false]);
-            return $this->getRealtimeDashboardData($dateFrom, $dateTo, $branchId);
-        }
+        return $this->getHistoricalDashboardData($dateFrom, $dateTo, $branchId);
     }
 
     /**
-     * Get realtime dashboard data using SINGLE OPTIMIZED query (for today/recent data)
+     * Get dashboard data from materialized views
      */
-    private function getRealtimeDashboardData($dateFrom, $dateTo, $branchId = null)
-    {
+    private function getHistoricalDashboardData($dateFrom, $dateTo, $branchId = null) {
         $startTime = microtime(true);
-
-        // OPTIMIZATION 1: Use timestamp range without time concatenation
-        $timestampFrom = $dateFrom . ' 00:00:00';
-        $timestampTo = $dateTo . ' 23:59:59';
-
-        $whereClause = "detection_timestamp BETWEEN ? AND ?";
-        $params = [$timestampFrom, $timestampTo];
+        $whereClause = "detection_date BETWEEN ? AND ?";
+        $params = [$dateFrom, $dateTo];
 
         if ($branchId) {
             $whereClause .= " AND branch_id = ?";
             $params[] = $branchId;
         }
 
-        // OPTIMIZATION 2: Parallel execution of separate queries
-        // This avoids the overhead of CTEs and UNION ALL
-
-        // Query 1: Stats summary - use approximate counts for huge tables
+        // Get stats summary
         $statsQuery = "
-        SELECT
-            COUNT(*) as total_detections,
-            COUNT(DISTINCT re_id) as unique_persons,
-            COUNT(DISTINCT branch_id) as unique_branches,
-            COUNT(DISTINCT device_id) as unique_devices
-        FROM re_id_branch_detections
-        WHERE {$whereClause}
-    ";
+            SELECT
+                COALESCE(SUM(total_detections), 0) as total_detections,
+                COALESCE(SUM(unique_persons), 0) as unique_persons,
+                COUNT(DISTINCT branch_id) as unique_branches,
+                COALESCE(SUM(unique_devices), 0) as unique_devices
+            FROM mv_daily_detection_stats
+            WHERE {$whereClause}
+        ";
 
-        // Query 2: Daily trend - optimized with index hints
+        // Get daily trend
         $dailyQuery = "
-        SELECT
-            DATE(detection_timestamp) as date,
-            COUNT(*) as count
-        FROM re_id_branch_detections
-        WHERE {$whereClause}
-        GROUP BY DATE(detection_timestamp)
-        ORDER BY date
-    ";
+            SELECT
+                detection_date as date,
+                COALESCE(SUM(total_detections), 0) as count
+            FROM mv_daily_detection_stats
+            WHERE {$whereClause}
+            GROUP BY detection_date
+            ORDER BY detection_date
+        ";
 
-        // Query 3: Top branches with names joined directly
-        $topBranchesQuery = "
-        SELECT
-            rbd.branch_id,
-            COUNT(*) as detection_count,
-            cb.branch_name
-        FROM re_id_branch_detections rbd
-        INNER JOIN company_branches cb ON cb.id = rbd.branch_id
-        WHERE rbd.{$whereClause}
-        GROUP BY rbd.branch_id, cb.branch_name
-        ORDER BY 2 DESC
-        LIMIT 5
-    ";
+        // Get top branches
+        $branchesQuery = "
+            SELECT
+                branch_id,
+                COALESCE(SUM(total_detections), 0) as detection_count
+            FROM mv_daily_detection_stats
+            WHERE {$whereClause} AND total_detections > 0
+            GROUP BY branch_id
+            ORDER BY SUM(total_detections) DESC
+            LIMIT 5
+        ";
 
-        // Execute all queries
         $statsResult = DB::selectOne($statsQuery, $params);
         $dailyResults = DB::select($dailyQuery, $params);
-        $branchResults = DB::select($topBranchesQuery, $params);
+        $branchResults = DB::select($branchesQuery, $params);
 
-        // Process results efficiently
+        // Process daily trend data
         $dailyTrend = [];
         $maxCount = 1;
-
         foreach ($dailyResults as $row) {
             $count = (int) $row->count;
             $dailyTrend[] = (object) ['date' => $row->date, 'count' => $count];
             if ($count > $maxCount) $maxCount = $count;
         }
 
-        $topBranches = array_map(function ($row) {
-            return (object) [
-                'branch_id' => (int) $row->branch_id,
-                'detection_count' => (int) $row->detection_count,
-                'branch' => (object) [
-                    'id' => (int) $row->branch_id,
-                    'branch_name' => $row->branch_name
-                ]
-            ];
-        }, $branchResults);
+        // Get branch names for top branches
+        $topBranches = [];
+        if (!empty($branchResults)) {
+            $branchIds = array_column($branchResults, 'branch_id');
+            $branches = \App\Models\CompanyBranch::whereIn('id', $branchIds)
+                ->select('id', 'branch_name')
+                ->get()
+                ->keyBy('id');
+
+            $topBranches = array_map(function ($row) use ($branches) {
+                return (object) [
+                    'branch_id' => (int) $row->branch_id,
+                    'detection_count' => (int) $row->detection_count,
+                    'branch' => (object) [
+                        'id' => (int) $row->branch_id,
+                        'branch_name' => $branches->get($row->branch_id)->branch_name ?? 'Unknown'
+                    ]
+                ];
+            }, $branchResults);
+        }
 
         $executionTime = (microtime(true) - $startTime) * 1000;
 
@@ -295,212 +267,40 @@ class ReportController extends Controller
             'dailyTrend' => $dailyTrend,
             'maxDailyCount' => $maxCount,
             'topBranches' => $topBranches,
-            'dataMode' => 'REALTIME',
-            'isRealtime' => true,
-            'executionTime' => round($executionTime, 2) . 'ms'
-        ];
-    }
-
-    /**
-     * Get historical dashboard data using SINGLE OPTIMIZED query (for old data)
-     */
-    private function getHistoricalDashboardData($dateFrom, $dateTo, $branchId = null)
-    {
-        $startTime = microtime(true);
-
-        // SINGLE ULTRA-OPTIMIZED QUERY: Get all data in one go
-        $whereClause = "detection_date BETWEEN ? AND ?";
-        $params = [$dateFrom, $dateTo];
-
-        if ($branchId) {
-            $whereClause .= " AND branch_id = ?";
-            $params[] = $branchId;
-        }
-
-        $singleQuery = "
-            WITH dashboard_data AS (
-                SELECT
-                    detection_date,
-                    branch_id,
-                    total_detections,
-                    unique_persons,
-                    unique_devices
-                FROM mv_daily_detection_stats
-                WHERE {$whereClause}
-            ),
-            stats_summary AS (
-                SELECT
-                    COALESCE(SUM(total_detections), 0) as total_detections,
-                    COALESCE(SUM(unique_persons), 0) as unique_persons,
-                    COUNT(DISTINCT branch_id) as unique_branches,
-                    COALESCE(SUM(unique_devices), 0) as unique_devices
-                FROM dashboard_data
-            ),
-            daily_trend AS (
-                SELECT
-                    detection_date as date,
-                    COALESCE(SUM(total_detections), 0) as count
-                FROM dashboard_data
-                GROUP BY detection_date
-                ORDER BY detection_date
-            ),
-            top_branches AS (
-                SELECT
-                    branch_id,
-                    COALESCE(SUM(total_detections), 0) as detection_count
-                FROM dashboard_data
-                WHERE total_detections > 0
-                GROUP BY branch_id
-                ORDER BY SUM(total_detections) DESC
-                LIMIT 5
-            )
-            SELECT
-                'stats' as data_type,
-                total_detections::text,
-                unique_persons::text,
-                unique_branches::text,
-                unique_devices::text,
-                NULL as date,
-                NULL as count,
-                NULL as branch_id,
-                NULL as detection_count
-            FROM stats_summary
-            UNION ALL
-            SELECT
-                'daily' as data_type,
-                NULL as total_detections,
-                NULL as unique_persons,
-                NULL as unique_branches,
-                NULL as unique_devices,
-                date::text,
-                count::text,
-                NULL as branch_id,
-                NULL as detection_count
-            FROM daily_trend
-            UNION ALL
-            SELECT
-                'branches' as data_type,
-                NULL as total_detections,
-                NULL as unique_persons,
-                NULL as unique_branches,
-                NULL as unique_devices,
-                NULL as date,
-                NULL as count,
-                branch_id::text,
-                detection_count::text
-            FROM top_branches
-        ";
-
-        $results = DB::select($singleQuery, $params);
-
-        // ULTRA-OPTIMIZED: Direct return without any processing
-        $executionTime = (microtime(true) - $startTime) * 1000;
-
-        // Extract data with minimal processing
-        $statsRow = array_filter($results, fn($r) => $r->data_type === 'stats')[0] ?? null;
-        $dailyRows = array_filter($results, fn($r) => $r->data_type === 'daily');
-        $branchRows = array_filter($results, fn($r) => $r->data_type === 'branches');
-
-        // Get branch names for top branches
-        $topBranchesWithNames = [];
-        if (!empty($branchRows)) {
-            $branchIds = array_column($branchRows, 'branch_id');
-            $branches = \App\Models\CompanyBranch::whereIn('id', $branchIds)
-                ->select('id', 'branch_name')
-                ->get()
-                ->keyBy('id');
-
-            $topBranchesWithNames = array_map(function ($r) use ($branches) {
-                return (object) [
-                    'branch_id' => (int) $r->branch_id,
-                    'detection_count' => (int) $r->detection_count,
-                    'branch' => $branches->get($r->branch_id)
-                ];
-            }, $branchRows);
-        }
-
-        // Direct return - no intermediate processing
-        return [
-            'totalDetections' => $statsRow ? (int) $statsRow->total_detections : 0,
-            'uniquePersons' => $statsRow ? (int) $statsRow->unique_persons : 0,
-            'uniqueBranches' => $statsRow ? (int) $statsRow->unique_branches : 0,
-            'uniqueDevices' => $statsRow ? (int) $statsRow->unique_devices : 0,
-            'dailyTrend' => array_map(fn($r) => (object) ['date' => $r->date, 'count' => (int) $r->count], $dailyRows),
-            'maxDailyCount' => max(array_column($dailyRows, 'count')) ?: 1,
-            'topBranches' => $topBranchesWithNames,
             'dataMode' => 'HISTORICAL',
             'isRealtime' => false,
             'executionTime' => round($executionTime, 2) . 'ms'
         ];
     }
 
-    /**
-     * Process dashboard results (common for both realtime and historical)
-     */
-    private function processDashboardResults($stats, $dailyData, $topBranchesData, $dateFrom, $dateTo, $branchId, $mode, $startTime)
-    {
-        // Direct return without collect() - return fields directly
-        return [
-            'totalDetections' => (int) $stats->total_detections,
-            'uniquePersons' => (int) $stats->unique_persons,
-            'uniqueBranches' => (int) $stats->unique_branches,
-            'uniqueDevices' => (int) $stats->unique_devices,
-            'dailyTrend' => $dailyData, // Direct array, no collect()
-            'maxDailyCount' => max(array_column($dailyData, 'count')) ?: 1,
-            'topBranches' => $topBranchesData, // Direct array, no collect()
-            'dataMode' => $mode,
-            'isRealtime' => $mode === 'REALTIME'
-        ];
-    }
 
     /**
-     * Clear ultra-performance cache
+     * Clear dashboard cache
      */
-    public function clearUltraCache($dateFrom = null, $dateTo = null, $branchId = null)
-    {
+    public function clearCache($dateFrom = null, $dateTo = null, $branchId = null) {
         if ($dateFrom && $dateTo) {
-            $dashboardKey = "ultra_dashboard_{$dateFrom}_{$dateTo}_" . ($branchId ?? 'all');
-            $exportKey = "ultra_export_{$dateFrom}_{$dateTo}_" . ($branchId ?? 'all');
-
-            cache()->forget($dashboardKey);
-            cache()->forget($exportKey);
-
-            Log::info('Ultra cache cleared for specific date range', [
-                'date_from' => $dateFrom,
-                'date_to' => $dateTo,
-                'branch_id' => $branchId
-            ]);
+            $cacheKey = "ultra_dashboard_{$dateFrom}_{$dateTo}_" . ($branchId ?? 'all');
+            cache()->forget($cacheKey);
+            Log::info('Dashboard cache cleared', ['cache_key' => $cacheKey]);
         } else {
-            // Clear all ultra cache patterns
             cache()->flush();
-            Log::info('All ultra cache cleared');
+            Log::info('All cache cleared');
         }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cache cleared successfully'
+        ]);
     }
 
-    /**
-     * Get ultra-performance metrics
-     */
-    public function getUltraPerformanceMetrics()
-    {
-        return [
-            'cache_strategy' => 'ultra_aggressive_30min',
-            'query_optimization' => 'single_mega_query',
-            'index_strategy' => 'ultra_performance_indexes',
-            'expected_performance' => '20x_faster',
-            'cache_hit_rate' => '95%',
-            'query_count' => '1_query_total'
-        ];
-    }
 
     /**
-     * Refresh materialized views for optimal performance
+     * Refresh materialized views
      */
-    public function refreshMaterializedViews()
-    {
+    public function refreshMaterializedViews() {
         $startTime = microtime(true);
 
         try {
-            // Refresh all materialized views
             $views = [
                 'mv_daily_detection_stats' => 'Daily detection statistics',
                 'mv_branch_detection_stats' => 'Branch detection statistics',
@@ -519,8 +319,7 @@ class ReportController extends Controller
 
             Log::info('All materialized views refreshed successfully', [
                 'execution_time' => round($executionTime, 2) . 'ms',
-                'views_count' => count($views),
-                'timestamp' => now()
+                'views_count' => count($views)
             ]);
 
             return response()->json([
@@ -531,8 +330,7 @@ class ReportController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to refresh materialized views', [
-                'error' => $e->getMessage(),
-                'timestamp' => now()
+                'error' => $e->getMessage()
             ]);
 
             return response()->json([
