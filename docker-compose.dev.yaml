@@ -1,0 +1,14 @@
+services:
+  cctv_app:
+    build:
+      context: .
+      dockerfile: docker/frankenphp/Dockerfile
+    image: cctv/dashboard:dev
+    container_name: cctv_app_dev
+    network_mode: host
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - .env
+    restart: unless-stopped

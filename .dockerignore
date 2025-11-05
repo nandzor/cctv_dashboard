@@ -33,6 +33,9 @@ storage/framework/sessions/*
 storage/framework/views/*
 storage/logs/*
 
+# Storage private files (will be created in container)
+storage/app/private
+
 # Build artifacts
 public/hot
 public/storage
