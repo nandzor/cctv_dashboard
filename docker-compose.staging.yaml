@@ -6,9 +6,6 @@ services:
     image: cctv/dashboard:staging
     container_name: cctv_app_staging
     network_mode: host
-    ports:
-      - "9001:80"
-      - "443:443"
     env_file:
       - .env
     restart: always

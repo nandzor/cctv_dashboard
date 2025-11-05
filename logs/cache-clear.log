@@ -91,3 +91,4 @@
 
    INFO  Application cache cleared successfully.  
 
+Error response from daemon: No such container: cctv_app_staging
