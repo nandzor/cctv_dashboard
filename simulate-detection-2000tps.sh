@@ -1,8 +1,21 @@
 #!/bin/bash
 
+# Auto-detect project directory (script location)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$SCRIPT_DIR"
+CONTAINER_NAME="cctv_app_local"
+
+# Helper function untuk menjalankan artisan command
+artisan() {
+    docker exec "$CONTAINER_NAME" php artisan "$@"
+}
+
 echo "🚀 CCTV Dashboard Detection API 2000 TPS Simulation"
 echo "=================================================="
 echo "Simulating 2000 TPS (Transactions Per Second) to /api/v1/detection/log"
+echo ""
+echo "📁 Project directory: $PROJECT_DIR"
+echo "🐳 Container: $CONTAINER_NAME"
 echo ""
 echo "📋 Active Queues in this Simulation:"
 echo "===================================="
@@ -17,6 +30,13 @@ echo "• Images queue - Not used in this simulation"
 echo "• Default queue - Not used in this simulation"
 echo ""
 
+# Check if container exists
+if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "❌ Container $CONTAINER_NAME tidak berjalan!"
+    echo "   Jalankan: docker compose -f docker-compose.local.yaml up -d"
+    exit 1
+fi
+
 # Use provided API credentials
 echo "📋 Using provided API credentials..."
 API_KEY="cctv_XQXuszrVkCMIhcYp9BAQm7qbFCxuT1l8"
@@ -25,7 +45,7 @@ API_SECRET="67QZAwFXv2VEGNNptY30pqnuuvnR88mjpURjfksaeJdcipdIcMDPprstWYObJNYX"
 echo "✅ Using API Key: $API_KEY"
 echo ""
 
-# Base URL
+# Base URL - detect port from docker-compose or use default
 BASE_URL="http://localhost:9001"
 
 # Function to generate random detection data
@@ -130,7 +150,7 @@ fi
 echo ""
 
 echo "🔍 Checking active queue status..."
-docker exec cctv_app_staging php artisan tinker --execute="
+artisan tinker --execute="
 \$redis = app('redis');
 echo 'Active Queues in Simulation:';
 echo '============================';
@@ -147,7 +167,7 @@ echo 'Images queue: ' . \$redis->llen('queues:images') . PHP_EOL;
 
 echo ""
 echo "📈 Detection data:"
-docker exec cctv_app_staging php artisan tinker --execute="
+artisan tinker --execute="
 echo 'Total detections: ' . App\\Models\\ReIdBranchDetection::count() . PHP_EOL;
 echo 'Recent detections (last 5 minutes): ' . App\\Models\\ReIdBranchDetection::where('detection_timestamp', '>=', now()->subMinutes(5))->count() . PHP_EOL;
 "

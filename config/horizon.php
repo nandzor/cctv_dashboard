@@ -202,7 +202,17 @@ return [
     'environments' => [
         'production' => [
             'supervisor-1' => [
-                'maxProcesses' => 10,
+                'connection' => 'redis',
+                'queue' => ['default', 'detections', 'reports', 'notifications', 'images'],
+                'balance' => 'auto',
+                'autoScalingStrategy' => 'time',
+                'maxProcesses' => 16,
+                'maxTime' => 0,
+                'maxJobs' => 0,
+                'memory' => 512,
+                'tries' => 3,
+                'timeout' => 60,
+                'nice' => 0,
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
@@ -210,13 +220,35 @@ return [
 
         'local' => [
             'supervisor-1' => [
-                'maxProcesses' => 3,
+                'connection' => 'redis',
+                'queue' => ['default', 'detections', 'reports', 'notifications', 'images'],
+                'balance' => 'auto',
+                'autoScalingStrategy' => 'time',
+                'maxProcesses' => 8,
+                'maxTime' => 0,
+                'maxJobs' => 0,
+                'memory' => 128,
+                'tries' => 3,
+                'timeout' => 60,
+                'nice' => 0,
+                'balanceMaxShift' => 1,
+                'balanceCooldown' => 3,
             ],
         ],
 
         'development' => [
             'supervisor-1' => [
+                'connection' => 'redis',
+                'queue' => ['default', 'detections', 'reports', 'notifications', 'images'],
+                'balance' => 'auto',
+                'autoScalingStrategy' => 'time',
                 'maxProcesses' => 8,
+                'maxTime' => 0,
+                'maxJobs' => 0,
+                'memory' => 128,
+                'tries' => 3,
+                'timeout' => 60,
+                'nice' => 0,
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],

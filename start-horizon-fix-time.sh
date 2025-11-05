@@ -1,13 +1,33 @@
 #!/bin/bash
 
+# Auto-detect project directory (script location)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$SCRIPT_DIR"
+CONTAINER_NAME="cctv_app_local"
+
+# Helper function untuk menjalankan artisan command
+artisan() {
+    docker exec "$CONTAINER_NAME" php artisan "$@"
+}
+
 echo "🔧 Fixing System Time Issues"
 echo "============================"
 echo ""
+echo "📁 Project directory: $PROJECT_DIR"
+echo "🐳 Container: $CONTAINER_NAME"
+echo ""
+
+# Check if container exists
+if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "❌ Container $CONTAINER_NAME tidak berjalan!"
+    echo "   Jalankan: docker compose -f docker-compose.local.yaml up -d"
+    exit 1
+fi
 
 echo "📊 Current Status:"
 echo "================="
 echo "Host time: $(date)"
-echo "Container time: $(docker exec cctv_app_staging date)"
+echo "Container time: $(docker exec $CONTAINER_NAME date)"
 echo ""
 
 echo "🔍 Problem Analysis:"
@@ -29,7 +49,7 @@ echo ""
 
 # Clear all delayed jobs
 echo "🧹 Clearing all delayed jobs..."
-docker exec cctv_app_staging php artisan tinker --execute="
+artisan tinker --execute="
 \$redis = app('redis');
 \$queues = ['default', 'detections', 'reports', 'notifications', 'images'];
 foreach (\$queues as \$queue) {
@@ -50,9 +70,9 @@ echo ""
 
 # Restart Horizon
 echo "🔄 Restarting Horizon..."
-docker exec cctv_app_staging php artisan horizon:terminate
+artisan horizon:terminate
 sleep 2
-docker exec cctv_app_staging php artisan horizon &
+docker exec "$CONTAINER_NAME" php artisan horizon &
 sleep 3
 
 echo "✅ Horizon restarted"
@@ -64,7 +84,7 @@ echo "Checking that all queues are clean"
 echo ""
 
 # Verify clean state
-docker exec cctv_app_staging php artisan tinker --execute="
+artisan tinker --execute="
 echo '🔍 Final verification...';
 echo '======================';
 \$redis = app('redis');
